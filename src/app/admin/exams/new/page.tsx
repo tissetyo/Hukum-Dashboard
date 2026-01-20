@@ -63,6 +63,7 @@ export default function NewExamPage() {
 
         setSaving(true);
         try {
+            console.log('Saving exam:', exam);
             // 1. Save Exam
             const { data: examData, error: examError } = await supabase
                 .from('exams')
@@ -70,26 +71,41 @@ export default function NewExamPage() {
                 .select()
                 .single();
 
-            if (examError) throw examError;
+            if (examError) {
+                console.error('Exam save error:', examError);
+                throw new Error(`Failed to save exam details: ${examError.message}`);
+            }
+
+            console.log('Exam saved:', examData);
 
             // 2. Save Questions if any
             if (questions.length > 0) {
+                // Explicitly map only necessary fields to avoid sending UI state to DB
                 const questionsToSave = questions.map((q, i) => ({
-                    ...q,
                     exam_id: examData.id,
+                    type: q.type,
+                    content: q.content,
+                    options: q.options,
                     order: i
                 }));
+
+                console.log('Saving questions:', questionsToSave);
 
                 const { error: qError } = await supabase
                     .from('questions')
                     .insert(questionsToSave);
 
-                if (qError) throw qError;
+                if (qError) {
+                    console.error('Questions save error:', qError);
+                    // Try to rollback exam if questions fail? For now just alert.
+                    throw new Error(`Failed to save questions: ${qError.message}`);
+                }
             }
 
             setSavedExam(examData);
         } catch (error: any) {
-            alert('Error saving exam: ' + error.message);
+            console.error('Full save error:', error);
+            alert(`Error saving exam: ${error.message}`);
         } finally {
             setSaving(false);
         }

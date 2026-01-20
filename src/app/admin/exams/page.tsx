@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, Search, MoreVertical, Edit, Trash2, Eye, FileText, Download } from 'lucide-react';
+import { Plus, Search, MoreVertical, Edit, Trash2, Eye, FileText, Download, Share2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { exportExamToPDF } from '@/lib/pdf';
 
@@ -84,6 +84,18 @@ export default function ExamsListPage() {
                                     </td>
                                     <td style={{ padding: '16px 24px', textAlign: 'right' }}>
                                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                            <button
+                                                className="btn-ghost"
+                                                style={{ padding: '8px', color: 'var(--primary)' }}
+                                                title="Copy Registration Link"
+                                                onClick={() => {
+                                                    const link = `${window.location.origin}/register/${exam.id}`;
+                                                    navigator.clipboard.writeText(link);
+                                                    alert('Registration link copied to clipboard!');
+                                                }}
+                                            >
+                                                <Share2 size={18} />
+                                            </button>
                                             <button
                                                 className="btn-ghost"
                                                 style={{ padding: '8px' }}
