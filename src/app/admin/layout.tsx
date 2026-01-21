@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, FileText, Users, Mail, Settings } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Mail, Settings, PieChart } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     return (
@@ -24,6 +24,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <AdminNavLink href="/admin" icon={<LayoutDashboard size={20} />} label="Dashboard" />
                     <AdminNavLink href="/admin/exams" icon={<FileText size={20} />} label="Manage Tests" />
                     <AdminNavLink href="/admin/participants" icon={<Users size={20} />} label="Participants" />
+                    <AdminNavLink href="/admin/responses" icon={<PieChart size={20} />} label="Responses" />
                     <AdminNavLink href="/admin/emails" icon={<Mail size={20} />} label="Email Center" />
                     <AdminNavLink href="/admin/settings" icon={<Settings size={20} />} label="Settings" />
                 </nav>
