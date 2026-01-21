@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { supabase } from '@/lib/supabase';
 import { Users, FileText, CheckCircle, TrendingUp } from 'lucide-react';
