@@ -111,9 +111,9 @@ export default function ExamsListPage() {
                                             >
                                                 <Download size={18} />
                                             </button>
-                                            <button className="btn-ghost" style={{ padding: '8px' }} title="Preview">
+                                            <Link href={`/register/${exam.id}`} target="_blank" className="btn-ghost" style={{ padding: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} title="Preview">
                                                 <Eye size={18} />
-                                            </button>
+                                            </Link>
                                             <Link href={`/admin/exams/${exam.id}`} className="btn-ghost" style={{ padding: '8px' }} title="Edit">
                                                 <Edit size={18} />
                                             </Link>
