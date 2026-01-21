@@ -38,7 +38,7 @@ export default function ExamDetailsPage() {
     async function fetchExamDetails() {
         setLoading(true);
         const { data: examData, error } = await supabase.from('exams').select('*').eq('id', id).single();
-        if (data) {
+        if (examData) {
             setExam(examData);
             const { data: qData } = await supabase.from('questions').select('*').eq('exam_id', id).order('order', { ascending: true });
             if (qData) setQuestions(qData);
