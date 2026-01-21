@@ -167,6 +167,12 @@ export default function NewExamPage() {
                         <h1 style={{ fontSize: '1.5rem', fontWeight: '700' }}>Create New Certification Test</h1>
                     </div>
                 </div>
+                {(!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) && (
+                    <div style={{ background: '#fef2f2', color: '#ef4444', padding: '12px 20px', borderRadius: 'var(--radius)', border: '1px solid #fee2e2', fontSize: '0.85rem', maxWidth: '400px' }}>
+                        <strong>Connection Error:</strong> Supabase is not connected.
+                        <br />Please add <code>NEXT_PUBLIC_SUPABASE_URL</code> and Key to your environment variables (Vercel or .env.local).
+                    </div>
+                )}
                 <div style={{ display: 'flex', gap: '16px' }}>
                     <button className="btn btn-ghost" onClick={() => setShowPreview(true)}>
                         <Eye size={18} style={{ marginRight: '8px' }} />
