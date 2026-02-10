@@ -34,7 +34,7 @@ export default function QuestionInput({ question, value, onChange }: { question:
                             <input
                                 id={inputId}
                                 type="radio"
-                                name={`question_${question.id}`}
+                                name={inputId}
                                 value={opt}
                                 checked={value === opt}
                                 onChange={() => onChange(opt)}
