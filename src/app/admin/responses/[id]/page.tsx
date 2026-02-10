@@ -110,6 +110,66 @@ export default function ExamResponsesPage() {
         finally { setLoadingResponses(false); }
     };
 
+    const handleExportExamPaper = async () => {
+        setLoadingResponses(true);
+        try {
+            const doc = new jsPDF();
+            const pIds = participants.map(p => p.id);
+            const { data: subs } = await supabase.from('submissions').select('*').in('participant_id', pIds);
+
+            for (let i = 0; i < participants.length; i++) {
+                const p = participants[i];
+                const sub = subs?.find(s => s.participant_id === p.id);
+                const answers = sub?.answers || {};
+
+                if (i > 0) doc.addPage();
+
+                // Header
+                doc.setFontSize(18);
+                doc.text(exam?.title || 'Exam', 105, 20, { align: 'center' });
+
+                doc.setFontSize(12);
+                doc.text(`Name: ${p.full_name}`, 14, 35);
+                doc.text(`Email: ${p.email}`, 14, 42);
+                doc.text(`Score: ${p.score !== null ? p.score + '%' : 'Not Graded'}`, 14, 49);
+                doc.text(`Date: ${new Date(p.created_at).toLocaleDateString()}`, 150, 35);
+
+                doc.line(14, 55, 196, 55);
+
+                let yPos = 65;
+
+                questions.forEach((q, idx) => {
+                    // Check if we need a new page
+                    if (yPos > 250) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+
+                    doc.setFontSize(11);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(`Q${idx + 1}: ${q.content}`, 14, yPos);
+
+                    yPos += 8;
+                    doc.setFont('helvetica', 'normal');
+
+                    const answer = answers[q.id] || '(No Answer)';
+                    const splitAnswer = doc.splitTextToSize(answer, 180);
+
+                    doc.text(splitAnswer, 14, yPos);
+
+                    yPos += (splitAnswer.length * 5) + 10;
+                });
+            }
+
+            doc.save(`${exam.title}_ExamPapers.pdf`);
+        } catch (e) {
+            console.error(e);
+            alert('Export failed');
+        } finally {
+            setLoadingResponses(false);
+        }
+    };
+
     const handleGrade = async () => {
         if (!selectedPart || !gradingScore) return;
         await supabase.from('participants').update({ score: parseFloat(gradingScore), status: 'graded' }).eq('id', selectedPart.id);
@@ -145,7 +205,10 @@ export default function ExamResponsesPage() {
                         <h2 style={{ margin: 0, fontSize: '1.1rem' }}>Participant List</h2>
                     </div>
                     <button className="btn btn-secondary" onClick={handleBulkExport} disabled={loadingResponses}>
-                        <Download size={18} /> Export All to CSV
+                        <Download size={18} /> Export CSV
+                    </button>
+                    <button className="btn btn-primary" onClick={handleExportExamPaper} disabled={loadingResponses} style={{ marginLeft: '10px' }}>
+                        <Download size={18} /> Export Exam Papers
                     </button>
                 </div>
 

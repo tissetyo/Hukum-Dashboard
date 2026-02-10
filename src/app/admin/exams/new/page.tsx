@@ -24,7 +24,7 @@ export default function NewExamPage() {
 
     const addQuestion = () => {
         setQuestions([...questions, {
-            type: 'multiple_choice',
+            type: 'text',
             content: '',
             options: ['', ''],
             order: questions.length
