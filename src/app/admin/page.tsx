@@ -96,6 +96,7 @@ export default function AdminDashboard() {
                                         name={sub.full_name}
                                         test={sub.exams?.title || 'Unknown'}
                                         status={sub.status}
+                                        examId={sub.exam_id}
                                     />
                                 ))
                             )}
@@ -127,7 +128,9 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode, label: string
     );
 }
 
-function RecentRow({ name, test, status }: { name: string, test: string, status: string }) {
+import Link from 'next/link';
+
+function RecentRow({ name, test, status, examId }: { name: string, test: string, status: string, examId: string }) {
     // Normalize status to match standard keys or just use what comes from DB if they match
     // DB usually has 'pending', 'graded', 'in_progress', 'completed'
     const statusMap: Record<string, string> = {
@@ -168,7 +171,9 @@ function RecentRow({ name, test, status }: { name: string, test: string, status:
                 </span>
             </td>
             <td style={{ padding: '12px 8px' }}>
-                <button className="btn-ghost" style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem' }}>View</button>
+                <Link href={`/admin/responses/${examId}`} className="btn-ghost" style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', textDecoration: 'none', display: 'inline-block' }}>
+                    View
+                </Link>
             </td>
         </tr>
     );

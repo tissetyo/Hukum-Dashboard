@@ -10,23 +10,20 @@ export default function QuestionInput({ question, value, onChange }: { question:
         return (
             <div className="flex-column" style={{ gap: '12px' }}>
                 {question.options?.map((opt: string, i: number) => {
-                    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
-                    const uniqueGroupName = `q_${question.id || 'preview'}_${i}_${params.toString()}`;
-                    // To be safe against any name collisions, we can just use the question ID strongly.
-                    // But actually, the issue "jumping" usually happens if the clicked area triggers a different radio.
-                    // Let's use standard unique IDs.
+                    const optValue = `__idx_${i}`;
                     const inputId = `q-${question.id}-${i}`;
+                    const isSelected = value === optValue;
 
                     return (
                         <label
                             key={i}
                             htmlFor={inputId}
-                            className={clsx('btn btn-ghost', { 'btn-primary': value === opt })}
+                            className={clsx('btn btn-ghost', { 'btn-primary': isSelected })}
                             style={{
                                 justifyContent: 'flex-start',
                                 textAlign: 'left',
                                 padding: '16px',
-                                borderColor: value === opt ? 'var(--primary)' : 'var(--border)',
+                                borderColor: isSelected ? 'var(--primary)' : 'var(--border)',
                                 cursor: 'pointer',
                                 position: 'relative'
                             }}
@@ -34,10 +31,10 @@ export default function QuestionInput({ question, value, onChange }: { question:
                             <input
                                 id={inputId}
                                 type="radio"
-                                name={inputId}
-                                value={opt}
-                                checked={value === opt}
-                                onChange={() => onChange(opt)}
+                                name={`question_${question.id}`}
+                                value={optValue}
+                                checked={isSelected}
+                                onChange={() => onChange(optValue)}
                                 style={{ marginRight: '12px' }}
                             />
                             {opt}
