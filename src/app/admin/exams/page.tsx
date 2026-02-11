@@ -5,6 +5,11 @@ import Link from 'next/link';
 import { Plus, Search, MoreVertical, Edit, Trash2, Eye, FileText, Download, Share2 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { exportExamToPDF } from '@/lib/pdf';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: 'Manage Tests | Indolaw',
+};
 
 export default function ExamsListPage() {
     const supabase = createClient();

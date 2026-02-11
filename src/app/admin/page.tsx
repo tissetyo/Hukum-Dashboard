@@ -3,6 +3,11 @@
 import React from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Users, FileText, CheckCircle, TrendingUp } from 'lucide-react';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: 'Admin Dashboard | Indolaw',
+};
 
 export default function AdminDashboard() {
     const supabase = createClient();

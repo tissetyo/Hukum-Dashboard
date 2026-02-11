@@ -5,6 +5,11 @@ import { createClient } from '@/utils/supabase/client';
 import { Mail, CheckCircle, XCircle, Download, ExternalLink, Award } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: 'Participants | Indolaw',
+};
 
 export default function ParticipantsPage() {
     const supabase = createClient();

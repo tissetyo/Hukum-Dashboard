@@ -4,6 +4,11 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { Shield, ArrowRight } from 'lucide-react';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: 'Participant Portal | Indolaw',
+};
 
 export default function ParticipantLoginPage() {
     const supabase = createClient();

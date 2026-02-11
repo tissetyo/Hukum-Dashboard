@@ -5,6 +5,11 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { Gavel, Loader2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: 'Sign In | Indolaw',
+};
 
 export default function LoginPage() {
     const router = useRouter();

@@ -3,6 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Users, Send, Info } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: 'Email Center | Indolaw',
+};
 
 export default function EmailCenterPage() {
     const supabase = createClient();
