@@ -10,6 +10,7 @@ export default function UserDashboardPage() {
     const supabase = createClient();
     const { token } = useParams();
     const [data, setData] = useState<any>(null);
+    const [history, setHistory] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -18,22 +19,37 @@ export default function UserDashboardPage() {
 
     async function fetchDashboardData() {
         setLoading(true);
+        // 1. Fetch current exam data
         const { data: partData } = await supabase
             .from('participants')
             .select('*, exams(*)')
             .eq('access_token', token)
             .single();
 
-        if (partData) setData(partData);
+        if (partData) {
+            setData(partData);
+
+            // 2. Fetch history for this email
+            const { data: historyData } = await supabase
+                .from('participants')
+                .select('*, exams(title, duration)')
+                .eq('email', partData.email)
+                .neq('id', partData.id) // Exclude current
+                .order('created_at', { ascending: false });
+
+            if (historyData) setHistory(historyData);
+        }
         setLoading(false);
     }
 
     if (loading) return <div className="flex-center" style={{ height: '100vh' }}>Loading Dashboard...</div>;
     if (!data) return <div className="flex-center" style={{ height: '100vh' }}>Access Denied.</div>;
 
+    const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+
     return (
-        <div className="container" style={{ padding: '60px 20px' }}>
-            <header style={{ marginBottom: '48px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div className="container" style={{ padding: '60px 20px', maxWidth: '1000px' }}>
+            <header style={{ marginBottom: '48px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '20px' }}>
                 <div>
                     <h1 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>Welcome, {data.full_name}</h1>
                     <p style={{ color: 'var(--text-muted)' }}>Certification Progress & Results for <strong>{data.exams.title}</strong></p>
@@ -44,7 +60,7 @@ export default function UserDashboardPage() {
                 </div>
             </header>
 
-            <div className="grid gap-8" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', marginBottom: '48px' }}>
+            <div className="grid gap-8 dashboard-grid" style={{ marginBottom: '48px' }}>
                 <div className="premium-card flex-column" style={{ justifyContent: 'space-between' }}>
                     <div>
                         <div className="flex" style={{ gap: '12px', marginBottom: '20px' }}>
@@ -78,15 +94,55 @@ export default function UserDashboardPage() {
                     <div className="flex-column" style={{ gap: '12px' }}>
                         <DocRow
                             title="Certificate of Completion"
-                            available={data.status === 'graded' && data.score >= 70}
+                            available={!!data.certificate_url || (data.status === 'graded' && data.score >= 70)}
                             icon={<Award size={18} />}
-                            onDownload={() => exportCertificatePDF(data, data.exams)}
+                            onDownload={() => {
+                                if (data.certificate_url) {
+                                    window.open(data.certificate_url, '_blank');
+                                } else {
+                                    exportCertificatePDF(data, data.exams);
+                                }
+                            }}
                         />
-                        <DocRow title="Exam Summary PDF" available={data.status === 'graded'} icon={<FileText size={18} />} />
+                        <DocRow
+                            title="Exam Summary PDF"
+                            available={data.status === 'graded'}
+                            icon={<FileText size={18} />}
+                        />
                         <DocRow title="Learning Materials" available={true} icon={<Download size={18} />} />
                     </div>
                 </div>
             </div>
+
+            {history.length > 0 && (
+                <section style={{ marginBottom: '48px' }}>
+                    <h2 style={{ marginBottom: '24px' }}>My Other Exams</h2>
+                    <div className="grid gap-4">
+                        {history.map((item: any) => (
+                            <div key={item.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'transform 0.2s' }}>
+                                <div>
+                                    <h4 style={{ margin: '0 0 4px 0' }}>{item.exams?.title}</h4>
+                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                        Registered: {new Date(item.created_at).toLocaleDateString()}
+                                    </span>
+                                </div>
+                                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                                    <span className={`badge badge-${getStatusColor(item.status)}`}>
+                                        {item.status.toUpperCase()}
+                                    </span>
+                                    <a
+                                        href={item.status === 'graded' || item.status === 'completed' ? `/dashboard/${item.access_token}` : `/test/${item.access_token}`}
+                                        className="btn btn-ghost"
+                                        style={{ fontSize: '0.9rem' }}
+                                    >
+                                        View <Clock size={14} style={{ marginLeft: '4px' }} />
+                                    </a>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             <section>
                 <h2 style={{ marginBottom: '24px' }}>Exam Timeline</h2>
@@ -97,8 +153,27 @@ export default function UserDashboardPage() {
                     {data.status === 'graded' && <TimelineItem date="N/A" label="Grading Completed & Certificate Issued" active />}
                 </div>
             </section>
+
+            <style jsx>{`
+                .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+                .badge-pending { background: #fef3c7; color: #d97706; }
+                .badge-in_progress { background: #dbeafe; color: #2563eb; }
+                .badge-completed { background: #e0e7ff; color: #4338ca; }
+                .badge-graded { background: #d1fae5; color: #059669; }
+                .dashboard-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+            `}</style>
         </div>
     );
+}
+
+function getStatusColor(status: string) {
+    switch (status) {
+        case 'pending': return 'pending';
+        case 'in_progress': return 'in_progress';
+        case 'completed': return 'completed';
+        case 'graded': return 'graded';
+        default: return 'pending';
+    }
 }
 
 function DocRow({ title, available, icon, onDownload }: { title: string, available: boolean, icon: React.ReactNode, onDownload?: () => void }) {

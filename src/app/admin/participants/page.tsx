@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Mail, CheckCircle, XCircle, Download, ExternalLink } from 'lucide-react';
+import { Mail, CheckCircle, XCircle, Download, ExternalLink, Award } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -23,6 +23,11 @@ export default function ParticipantsPage() {
     const [showEmailModal, setShowEmailModal] = useState(false);
     const [emailData, setEmailData] = useState({ to: '', subject: 'Exam Results', message: '', name: '' });
     const [sendingEmail, setSendingEmail] = useState(false);
+
+    // Upload State
+    const [showUploadModal, setShowUploadModal] = useState(false);
+    const [uploadFile, setUploadFile] = useState<File | null>(null);
+    const [uploading, setUploading] = useState(false);
 
     useEffect(() => {
         fetchParticipants();
@@ -89,6 +94,58 @@ export default function ParticipantsPage() {
             alert('Score updated successfully!');
             setSelectedPart(null);
             fetchParticipants();
+        }
+    };
+
+    const handleOpenUpload = (p: any) => {
+        setSelectedPart(p);
+        setUploadFile(null);
+        setShowUploadModal(true);
+    };
+
+    const handleUploadCertificate = async () => {
+        if (!selectedPart || !uploadFile) return;
+        setUploading(true);
+
+        try {
+            const fileExt = uploadFile.name.split('.').pop();
+            const fileName = `${selectedPart.id}_${Date.now()}.${fileExt}`;
+            const filePath = `${fileName}`;
+
+            // 1. Upload to Supabase Storage
+            const { error: uploadError } = await supabase.storage
+                .from('certificates')
+                .upload(filePath, uploadFile);
+
+            if (uploadError) throw new Error('Upload failed: ' + uploadError.message);
+
+            // 2. Get Public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('certificates')
+                .getPublicUrl(filePath);
+
+            // 3. Update Participant Record
+            const { error: updateError } = await supabase
+                .from('participants')
+                .update({
+                    certificate_url: publicUrl,
+                    status: 'graded' // Auto-mark as graded if certificate is uploaded? Or keep as is. Let's assume graded.
+                })
+                .eq('id', selectedPart.id);
+
+            if (updateError) throw new Error('Database update failed: ' + updateError.message);
+
+            alert('Certificate uploaded successfully!');
+            setShowUploadModal(false);
+            setUploadFile(null);
+            setSelectedPart(null);
+            fetchParticipants();
+
+        } catch (error: any) {
+            console.error('Upload Error:', error);
+            alert('Error: ' + error.message);
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -361,6 +418,9 @@ export default function ParticipantsPage() {
                                             <button className="btn-ghost btn-icon" onClick={() => setSelectedPart(p)} title="Grade">
                                                 <CheckCircle size={18} />
                                             </button>
+                                            <button className="btn-ghost btn-icon" onClick={() => handleOpenUpload(p)} title="Upload Certificate">
+                                                <Award size={18} />
+                                            </button>
                                             <button className="btn-ghost btn-icon" onClick={() => handleOpenEmail(p)} title="Send Email">
                                                 <Mail size={18} />
                                             </button>
@@ -421,7 +481,7 @@ export default function ParticipantsPage() {
             )}
 
             {/* Grading Modal */}
-            {selectedPart && (
+            {selectedPart && !showUploadModal && (
                 <div style={{
                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
                     background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100
@@ -447,6 +507,42 @@ export default function ParticipantsPage() {
                 </div>
             )}
 
+            {/* Upload Modal */}
+            {showUploadModal && selectedPart && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 120
+                }}>
+                    <div className="card" style={{ width: '400px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                            <Award size={24} color="var(--primary)" />
+                            <h3 style={{ margin: 0 }}>Upload Certificate</h3>
+                        </div>
+                        <p style={{ marginBottom: '24px', color: 'var(--text-muted)' }}>
+                            Upload a custom PDF certificate for <strong>{selectedPart.full_name}</strong>.
+                        </p>
+
+                        <div style={{ marginBottom: '24px' }}>
+                            <input
+                                type="file"
+                                accept=".pdf"
+                                onChange={(e) => setUploadFile(e.target.files ? e.target.files[0] : null)}
+                                style={{ width: '100%', padding: '12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleUploadCertificate} disabled={uploading || !uploadFile}>
+                                {uploading ? 'Uploading...' : 'Upload PDF'}
+                            </button>
+                            <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => { setShowUploadModal(false); setSelectedPart(null); }}>
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Add Participant Modal */}
             {showAddModal && (
                 <div style={{
@@ -455,7 +551,7 @@ export default function ParticipantsPage() {
                 }}>
                     <div className="card" style={{ width: '500px' }}>
                         <h3 style={{ marginBottom: '20px' }}>Add New Participant</h3>
-
+                        {/* ... existing add modal content ... */}
                         <div className="flex-column" style={{ gap: '16px' }}>
                             <div>
                                 <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.9rem' }}>Full Name</label>

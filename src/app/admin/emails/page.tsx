@@ -23,6 +23,41 @@ export default function EmailCenterPage() {
         if (data) setExams(data);
     }
 
+    const templates = [
+        {
+            name: 'Exam Results',
+            subject: 'Your Exam Results for {{exam_name}}',
+            body: `Dear {{name}},
+
+Your exam {{exam_name}} has been graded.
+You achieved a score of {{score}}%.
+
+You can view your full results and download your certificate here:
+{{link}}
+
+Best regards,
+Admin Team`
+        },
+        {
+            name: 'New Test Invitation',
+            subject: 'Invitation to take {{exam_name}}',
+            body: `Dear {{name}},
+
+You have been invited to take a new exam: {{exam_name}}.
+
+Please click the link below to start your test:
+{{link}}
+
+Good luck!
+Admin Team`
+        }
+    ];
+
+    const applyTemplate = (t: typeof templates[0]) => {
+        setSubject(t.subject);
+        setMessage(t.body);
+    };
+
     const handleSend = async () => {
         if (!subject || !message) {
             alert('Please fill subject and message');
@@ -30,25 +65,69 @@ export default function EmailCenterPage() {
         }
 
         setSending(true);
+        let successCount = 0;
+        let failCount = 0;
+
         try {
             if (recipientType === 'single') {
+                // For single email, we can't easily replace {{score}} or {{link}} dynamically without context
+                // So we'll send as is, or warn user. 
+                // However, for better UX, if they put an email that matches a participant, we could look it up.
+                // For now, let's just send basic replacements.
                 if (!email) throw new Error('Recipient email is required');
-                await sendEmail(email, 'Participant');
+                await sendEmail(email, 'Participant', message, subject);
+                successCount++;
             } else {
                 if (!selectedExamId) throw new Error('Please select an exam to email all participants');
+
+                // Fetch participants AND exam details
                 const { data: parts } = await supabase
                     .from('participants')
-                    .select('email, full_name')
+                    .select('*, exams(title)')
                     .eq('exam_id', selectedExamId);
 
-                if (parts) {
+                if (parts && parts.length > 0) {
                     for (const p of parts) {
-                        await sendEmail(p.email, p.full_name);
+                        try {
+                            // Prepare specific variables
+                            const examTitle = p.exams?.title || 'Exam';
+                            // Determine link based on status
+                            const baseUrl = window.location.origin;
+                            let link = `${baseUrl}/test/${p.access_token}`; // Default to test link
+                            if (p.status === 'graded' || p.status === 'completed') {
+                                link = `${baseUrl}/dashboard/${p.access_token}`; // Result link
+                            }
+
+                            // Replace variables
+                            let finalSubject = subject.replace(/{{exam_name}}/g, examTitle);
+
+                            let finalBody = message
+                                .replace(/{{name}}/g, p.full_name)
+                                .replace(/{{score}}/g, p.score !== null ? p.score : 'N/A')
+                                .replace(/{{exam_name}}/g, examTitle)
+                                .replace(/{{link}}/g, link);
+
+                            await sendEmail(p.email, p.full_name, finalBody, finalSubject);
+                            successCount++;
+                        } catch (e) {
+                            console.error(`Failed to send to ${p.email}`, e);
+                            failCount++;
+                        }
                     }
+                } else {
+                    alert('No participants found for this exam.');
+                    setSending(false);
+                    return;
                 }
             }
-            alert('Email(s) sent successfully!');
-            setMessage('');
+
+            if (failCount > 0) {
+                alert(`Finished: ${successCount} sent, ${failCount} failed. Check console for details.`);
+            } else {
+                alert(`Successfully sent ${successCount} emails!`);
+                setMessage('');
+                setSubject('');
+            }
         } catch (err: any) {
             alert('Error: ' + err.message);
         } finally {
@@ -56,17 +135,24 @@ export default function EmailCenterPage() {
         }
     };
 
-    async function sendEmail(to: string, name: string) {
+    async function sendEmail(to: string, name: string, htmlBody: string, subjectLine: string) {
         const res = await fetch('/api/send-email', {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 to,
-                subject,
-                message: message.replace('{{name}}', name),
+                subject: subjectLine,
+                message: htmlBody,
                 participantName: name
             })
         });
-        if (!res.ok) throw new Error('Failed to send email to ' + to);
+
+        const result = await res.json();
+
+        if (!res.ok) {
+            console.error('API Error Response:', result);
+            throw new Error(result.error || result.details?.message || 'Failed to send email');
+        }
     }
 
     return (
@@ -96,7 +182,7 @@ export default function EmailCenterPage() {
                                     onClick={() => setRecipientType('bulk')}
                                     style={{ flex: 1 }}
                                 >
-                                    <Users size={18} /> All Participants
+                                    <Users size={18} /> Valid Participants (By Exam)
                                 </button>
                             </div>
                         </div>
@@ -114,19 +200,38 @@ export default function EmailCenterPage() {
                             </div>
                         ) : (
                             <div>
-                                <label style={{ display: 'block', marginBottom: '8px' }}>Target Test</label>
+                                <label style={{ display: 'block', marginBottom: '8px' }}>Select Exam Group</label>
                                 <select
                                     value={selectedExamId}
                                     onChange={(e) => setSelectedExamId(e.target.value)}
                                     style={{ width: '100%', padding: '12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}
                                 >
-                                    <option value="">-- Choose a test to email all participants --</option>
+                                    <option value="">-- Choose an Exam --</option>
                                     {exams.map(ex => (
                                         <option key={ex.id} value={ex.id}>{ex.title}</option>
                                     ))}
                                 </select>
+                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                                    This will send an email to ALL participants registered for this exam.
+                                </p>
                             </div>
                         )}
+
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '8px' }}>Use a Template</label>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                {templates.map(t => (
+                                    <button
+                                        key={t.name}
+                                        className="btn btn-ghost"
+                                        onClick={() => applyTemplate(t)}
+                                        style={{ fontSize: '0.85rem', padding: '8px 12px' }}
+                                    >
+                                        {t.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
 
                         <div>
                             <label style={{ display: 'block', marginBottom: '8px' }}>Subject</label>
@@ -145,7 +250,7 @@ export default function EmailCenterPage() {
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}
                                 placeholder="Write your message here..."
-                                style={{ width: '100%', padding: '12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', minHeight: '200px' }}
+                                style={{ width: '100%', padding: '12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', minHeight: '200px', fontFamily: 'monospace' }}
                             />
                         </div>
 
@@ -159,13 +264,16 @@ export default function EmailCenterPage() {
                     <div className="card" style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
                         <div style={{ display: 'flex', gap: '12px', color: '#1d4ed8', marginBottom: '16px' }}>
                             <Info size={24} />
-                            <h4 style={{ margin: 0 }}>Smart Templates</h4>
+                            <h4 style={{ margin: 0 }}>Smart Variables</h4>
                         </div>
-                        <p style={{ fontSize: '0.9rem', color: '#3b82f6', marginBottom: '20px' }}>Use variables to personalize your bulk emails:</p>
+                        <p style={{ fontSize: '0.9rem', color: '#3b82f6', marginBottom: '20px' }}>
+                            Use these variables in your subject or body. They will be automatically replaced for each participant.
+                        </p>
                         <div className="flex-column" style={{ gap: '12px' }}>
                             <TemplateVar varName="{{name}}" description="Participant's full name" />
-                            <TemplateVar varName="{{score}}" description="The exam score" />
-                            <TemplateVar varName="{{link}}" description="Link to their dashboard" />
+                            <TemplateVar varName="{{score}}" description="The exam score (e.g. 85)" />
+                            <TemplateVar varName="{{exam_name}}" description="Title of the exam" />
+                            <TemplateVar varName="{{link}}" description="Link to Dashboard (if graded) or Test (if new)" />
                         </div>
                     </div>
                 </aside>
