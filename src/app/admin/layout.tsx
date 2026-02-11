@@ -16,7 +16,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 flexDirection: 'column',
                 gap: '32px'
             }}>
-                <div className="logo">
+                <div className="logo" style={{ background: '#FFDBDD', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'center' }}>
                     <img src="/logo.png" alt="Indolaw Logo" style={{ height: '50px', maxWidth: '100%', objectFit: 'contain' }} />
                 </div>
 
