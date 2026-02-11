@@ -5,9 +5,8 @@ export default function Home() {
   return (
     <div className="fade-in">
       <nav style={{ padding: '24px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ fontSize: '1.5rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary)' }}>
-          <Gavel size={28} />
-          <span>HUKUM.ID</span>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <img src="/logo.png" alt="Indolaw Logo" style={{ height: '45px' }} />
         </div>
         <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
           <Link href="/admin" className="btn btn-ghost">Admin Portal</Link>

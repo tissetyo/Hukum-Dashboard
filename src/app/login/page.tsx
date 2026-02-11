@@ -39,8 +39,8 @@ export default function LoginPage() {
     return (
         <div className="flex-center fade-in" style={{ minHeight: '100vh', background: 'var(--background)' }}>
             <div className="card" style={{ width: '100%', maxWidth: '400px', padding: '40px' }}>
-                <div className="flex-center" style={{ marginBottom: '32px', color: 'var(--primary)' }}>
-                    <Gavel size={40} />
+                <div className="flex-center" style={{ marginBottom: '32px' }}>
+                    <img src="/logo.png" alt="Indolaw Logo" style={{ height: '60px' }} />
                 </div>
 
                 <h1 style={{ textAlign: 'center', marginBottom: '8px', fontSize: '1.5rem' }}>Welcome Back</h1>

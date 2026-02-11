@@ -16,8 +16,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 flexDirection: 'column',
                 gap: '32px'
             }}>
-                <div className="logo" style={{ fontSize: '1.5rem', fontWeight: '700', fontFamily: 'var(--font-heading)' }}>
-                    Hukum<span style={{ color: 'var(--secondary)' }}>Admin</span>
+                <div className="logo">
+                    <img src="/logo.png" alt="Indolaw Logo" style={{ height: '50px', maxWidth: '100%', objectFit: 'contain' }} />
                 </div>
 
                 <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
