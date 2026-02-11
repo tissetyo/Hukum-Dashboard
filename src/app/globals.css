@@ -1,12 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap');
 
 :root {
-  --primary: #1e3a8a;
-  /* Deep Navy */
-  --primary-light: #3b82f6;
-  --secondary: #b68d40;
-  /* Gold/Brass */
+  --primary: #8A151B;
+  /* Deep Red */
+  --primary-light: #b91c1c;
+  /* Lighter Red */
+  --secondary: #8A151B;
+  /* Same as Primary (User requested no secondary) */
   --accent: #f59e0b;
+  /* Gold/Amber - kept for small highlights if needed, or can be made red too */
   --background: #f8fafc;
   --surface: #ffffff;
   --text: #0f172a;
@@ -25,9 +27,9 @@
 }
 
 [data-theme='dark'] {
-  --primary: #3b82f6;
-  --primary-light: #60a5fa;
-  --secondary: #d4af37;
+  --primary: #ef4444;
+  --primary-light: #f87171;
+  --secondary: #ef4444;
   --accent: #fbbf24;
   --background: #0f172a;
   --surface: #1e293b;
