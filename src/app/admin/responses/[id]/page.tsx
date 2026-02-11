@@ -3,11 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ChevronLeft, Download, CheckCircle, PieChart } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/client';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 export default function ExamResponsesPage() {
+    const supabase = createClient();
     const { id } = useParams();
     const router = useRouter();
 

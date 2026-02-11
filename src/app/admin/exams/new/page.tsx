@@ -3,11 +3,12 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, Save, Plus, Trash2, Settings, Eye, X, CheckCircle, Copy, ExternalLink, ChevronRight, Clock } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/client';
 import QuestionEditor from '@/components/QuestionEditor';
 import QuestionInput from '@/components/QuestionInput';
 
 export default function NewExamPage() {
+    const supabase = createClient();
     const router = useRouter();
     const [exam, setExam] = useState({
         title: '',

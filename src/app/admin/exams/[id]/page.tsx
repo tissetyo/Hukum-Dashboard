@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ChevronLeft, Save, Plus, Trash2, Settings, Eye, Clock, Download, ExternalLink, Mail, CheckCircle } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/client';
 import QuestionEditor from '@/components/QuestionEditor';
 import QuestionInput from '@/components/QuestionInput';
 import jsPDF from 'jspdf';
@@ -11,6 +11,7 @@ import autoTable from 'jspdf-autotable';
 import Link from 'next/link';
 
 export default function ExamDetailsPage() {
+    const supabase = createClient();
     const { id } = useParams();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'questions' | 'responses'>('questions');

@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/client';
 import { Mail, CheckCircle, XCircle, Download, ExternalLink } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 export default function ParticipantsPage() {
+    const supabase = createClient();
     const [participants, setParticipants] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedPart, setSelectedPart] = useState<any>(null);

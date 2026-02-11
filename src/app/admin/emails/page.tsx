@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Mail, Users, Send, Info, ChevronDown } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/client';
 
 export default function EmailCenterPage() {
+    const supabase = createClient();
     const [recipientType, setRecipientType] = useState('single');
     const [email, setEmail] = useState('');
     const [subject, setSubject] = useState('');

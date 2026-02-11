@@ -3,9 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Search, FileText, ChevronRight, PieChart } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/client';
 
 export default function ResponsesPage() {
+    const supabase = createClient();
     const [exams, setExams] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 

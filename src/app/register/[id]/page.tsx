@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/client';
 import { User, Mail, ShieldCheck, ChevronRight } from 'lucide-react';
 
 export default function RegisterExamPage() {
+    const supabase = createClient();
     const { id } = useParams();
     const router = useRouter();
     const [exam, setExam] = useState<any>(null);

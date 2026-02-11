@@ -3,11 +3,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Clock, Shield, Send, CheckCircle, AlertTriangle } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/client';
 import QuestionInput from '@/components/QuestionInput';
 import { clsx } from 'clsx';
 
 export default function ExamEnginePage() {
+    const supabase = createClient();
     const { token } = useParams();
     const router = useRouter();
 

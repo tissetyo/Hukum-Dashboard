@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/client';
 import { Gavel, Loader2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
@@ -12,6 +12,8 @@ export default function LoginPage() {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const supabase = createClient();
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();

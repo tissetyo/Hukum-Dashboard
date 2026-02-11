@@ -3,10 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Plus, Search, MoreVertical, Edit, Trash2, Eye, FileText, Download, Share2 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/client';
 import { exportExamToPDF } from '@/lib/pdf';
 
 export default function ExamsListPage() {
+    const supabase = createClient();
     const [exams, setExams] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 

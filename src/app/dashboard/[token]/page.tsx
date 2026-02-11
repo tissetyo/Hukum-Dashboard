@@ -3,10 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Award, Download, FileText, CheckCircle, Clock } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/client';
 import { exportCertificatePDF } from '@/lib/pdf';
 
 export default function UserDashboardPage() {
+    const supabase = createClient();
     const { token } = useParams();
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);

@@ -1,10 +1,11 @@
 'use client';
 
 import React from 'react';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/client';
 import { Users, FileText, CheckCircle, TrendingUp } from 'lucide-react';
 
 export default function AdminDashboard() {
+    const supabase = createClient();
     const [stats, setStats] = React.useState({
         activeTests: 0,
         participants: 0,
