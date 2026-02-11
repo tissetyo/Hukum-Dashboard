@@ -510,10 +510,10 @@ function TemplateVar({ varName, description, onClick }: { varName: string, descr
                 cursor: 'pointer', padding: '8px', borderRadius: '4px',
                 transition: 'background 0.2s', alignItems: 'center'
             }}
-            className="hover:bg-blue-100"
+            className="hover:bg-red-50"
         >
-            <code style={{ background: 'white', padding: '2px 6px', borderRadius: '4px', border: '1px solid #bfdbfe', color: '#2563eb', fontWeight: 'bold' }}>{varName}</code>
-            <span style={{ color: '#60a5fa', fontSize: '0.8rem', textAlign: 'right', maxWidth: '120px' }}>{description}</span>
+            <code style={{ background: 'white', padding: '2px 6px', borderRadius: '4px', border: '1px solid #fee2e2', color: 'var(--primary)', fontWeight: 'bold' }}>{varName}</code>
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textAlign: 'right', maxWidth: '120px' }}>{description}</span>
         </div>
     );
 }
