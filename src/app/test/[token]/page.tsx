@@ -139,6 +139,13 @@ export default function ExamEnginePage() {
                     <h2 style={{ color: 'var(--primary)', marginBottom: '16px' }}>Test Submitted Successfully!</h2>
                     <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>Your answers have been saved. Your results will be available in your dashboard once the administrator has graded your test.</p>
 
+                    <button
+                        className="btn btn-primary"
+                        onClick={() => router.push(`/dashboard/${token}`)}
+                        style={{ width: '100%', padding: '16px' }}
+                    >
+                        Go to Dashboard
+                    </button>
                 </div>
             </div>
         );
