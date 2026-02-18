@@ -12,6 +12,19 @@ export default function UserDashboardPage() {
     const [data, setData] = useState<any>(null);
     const [history, setHistory] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (data && data.status === 'graded') {
+            const settings = data.exams?.settings || {};
+            const passingScore = settings.passing_score || 70;
+            if (data.score >= passingScore) {
+                exportCertificatePDF(data, data.exams, settings, true).then((url) => {
+                    if (typeof url === 'string') setPdfUrl(url);
+                });
+            }
+        }
+    }, [data]);
 
     useEffect(() => {
         fetchDashboardData();
@@ -102,7 +115,7 @@ export default function UserDashboardPage() {
                                 if (data.certificate_url) {
                                     window.open(data.certificate_url, '_blank');
                                 } else {
-                                    exportCertificatePDF(data, data.exams, settings);
+                                    exportCertificatePDF(data, data.exams, settings, false);
                                 }
                             }}
                         />
@@ -143,6 +156,46 @@ export default function UserDashboardPage() {
                         )}
                     </div>
                 </div>
+
+                {/* Digital Certificate Preview */}
+                {(data.status === 'graded' && data.score >= passingScore) && (
+                    <div className="premium-card" style={{ gridColumn: '1 / -1' }}>
+                        <h3 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <Award size={24} color="var(--primary)" /> Digital Certificate
+                        </h3>
+                        {pdfUrl ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                <div style={{
+                                    width: '100%',
+                                    aspectRatio: '1.414/1',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: '8px',
+                                    overflow: 'hidden',
+                                    background: '#f8fafc'
+                                }}>
+                                    <iframe
+                                        src={pdfUrl}
+                                        style={{ width: '100%', height: '100%', border: 'none' }}
+                                        title="Certificate Preview"
+                                    />
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <button
+                                        className="btn btn-primary"
+                                        onClick={() => exportCertificatePDF(data, data.exams, settings, false)}
+                                        style={{ padding: '12px 24px' }}
+                                    >
+                                        <Download size={18} style={{ marginRight: '8px' }} /> Download PDF
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                Generating certificate preview...
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {history.length > 0 && (

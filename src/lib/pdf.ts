@@ -57,7 +57,7 @@ export const exportExamToPDF = (exam: any, questions: any[]) => {
     doc.save(`${exam.title.replace(/\s+/g, '_')}_Test.pdf`);
 };
 
-export const exportCertificatePDF = async (participant: any, exam: any, settings?: any) => {
+export const exportCertificatePDF = async (participant: any, exam: any, settings?: any, returnBlob: boolean = false) => {
     const doc = new jsPDF({
         orientation: 'landscape'
     });
@@ -223,7 +223,11 @@ export const exportCertificatePDF = async (participant: any, exam: any, settings
     doc.text('This certificate verifies the successful completion of the examination.', cx, h - 10, { align: 'center' });
     doc.text('LSP Officium Nobile Indolaw — hukum-dashboard.vercel.app', cx, h - 5.5, { align: 'center' });
 
-    doc.save(`Certificate_${participant.full_name.replace(/\s+/g, '_')}.pdf`);
+    if (returnBlob) {
+        return doc.output('bloburl');
+    } else {
+        doc.save(`Certificate_${participant.full_name.replace(/\s+/g, '_')}.pdf`);
+    }
 };
 
 // ── Helper: Score badge with rotating squares (brand maroon) ──
