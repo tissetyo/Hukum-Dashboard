@@ -114,8 +114,8 @@ export default function AdminDashboard() {
     return (
         <div className="fade-in">
             {/* Header */}
-            <header style={{ marginBottom: '32px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <header style={{ marginBottom: '28px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                     <div>
                         <h1 style={{ fontSize: '1.8rem', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <Sparkles size={24} color="var(--primary)" />
@@ -129,40 +129,16 @@ export default function AdminDashboard() {
                 </div>
             </header>
 
-            {/* Stats Row */}
-            <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: '28px' }}>
-                <StatCard
-                    icon={<FileText size={20} />}
-                    label="Total Ujian"
-                    value={stats.activeTests.toString()}
-                    color="#8b5cf6"
-                    trend="+aktif"
-                />
-                <StatCard
-                    icon={<Users size={20} />}
-                    label="Total Peserta"
-                    value={stats.participants.toString()}
-                    color="#3b82f6"
-                    trend="terdaftar"
-                />
-                <StatCard
-                    icon={<CheckCircle size={20} />}
-                    label="Sudah Dinilai"
-                    value={stats.graded.toString()}
-                    color="#10b981"
-                    trend="peserta"
-                />
-                <StatCard
-                    icon={<BarChart3 size={20} />}
-                    label="Rata-rata Skor"
-                    value={`${stats.avgScore}%`}
-                    color="#f59e0b"
-                    trend="overall"
-                />
+            {/* Stats Row — uses .dash-stats from globals.css */}
+            <div className="dash-stats" style={{ marginBottom: '24px' }}>
+                <StatCard icon={<FileText size={20} />} label="Total Ujian" value={stats.activeTests.toString()} color="#8b5cf6" trend="+aktif" />
+                <StatCard icon={<Users size={20} />} label="Total Peserta" value={stats.participants.toString()} color="#3b82f6" trend="terdaftar" />
+                <StatCard icon={<CheckCircle size={20} />} label="Sudah Dinilai" value={stats.graded.toString()} color="#10b981" trend="peserta" />
+                <StatCard icon={<BarChart3 size={20} />} label="Rata-rata Skor" value={`${stats.avgScore}%`} color="#f59e0b" trend="overall" />
             </div>
 
-            {/* Row 2: Test History + Quick Draft */}
-            <div className="grid gap-6" style={{ gridTemplateColumns: '2fr 1fr', marginBottom: '28px' }}>
+            {/* Row 2: Test History + Quick Draft — uses .dash-row */}
+            <div className="dash-row" style={{ marginBottom: '24px' }}>
                 {/* Test History */}
                 <div className="card" style={{ padding: '24px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -183,7 +159,7 @@ export default function AdminDashboard() {
                             <p style={{ marginTop: '8px' }}>Belum ada ujian. Buat ujian pertama Anda!</p>
                         </div>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
                             {exams.map((exam, i) => (
                                 <Link
                                     key={exam.id}
@@ -202,30 +178,16 @@ export default function AdminDashboard() {
                                     onMouseOver={(e) => { e.currentTarget.style.background = 'var(--surface, #f8fafc)'; }}
                                     onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
                                 >
-                                    {/* Timeline Dot */}
-                                    <div style={{
-                                        width: '10px',
-                                        height: '10px',
-                                        borderRadius: '50%',
-                                        background: 'var(--primary)',
-                                        flexShrink: 0,
-                                        border: '2px solid white',
-                                        boxShadow: '0 0 0 2px var(--primary)',
-                                    }} />
-                                    {/* Info */}
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{exam.title}</div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', gap: '12px' }}>
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                                                <Clock size={11} /> {exam.duration}m
-                                            </span>
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                                                <Users size={11} /> {exam.participants?.length || 0} peserta
-                                            </span>
+                                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--primary)', flexShrink: 0, border: '2px solid white', boxShadow: '0 0 0 2px var(--primary)' }} />
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontWeight: '600', fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exam.title}</div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}><Clock size={11} /> {exam.duration}m</span>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}><Users size={11} /> {exam.participants?.length || 0} peserta</span>
                                             <span>{new Date(exam.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                                         </div>
                                     </div>
-                                    <ArrowRight size={16} style={{ color: 'var(--text-muted)' }} />
+                                    <ArrowRight size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
                                 </Link>
                             ))}
                         </div>
@@ -259,6 +221,7 @@ export default function AdminDashboard() {
                                 border: '1px solid var(--border)',
                                 fontSize: '0.88rem',
                                 background: 'white',
+                                boxSizing: 'border-box',
                             }}
                         />
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -276,6 +239,7 @@ export default function AdminDashboard() {
                                         border: '1px solid var(--border)',
                                         fontSize: '0.88rem',
                                         background: 'white',
+                                        boxSizing: 'border-box',
                                     }}
                                 />
                             </div>
@@ -285,15 +249,7 @@ export default function AdminDashboard() {
                             className="btn btn-primary"
                             onClick={handleCreateDraft}
                             disabled={creatingDraft || !draftTitle.trim()}
-                            style={{
-                                width: '100%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '6px',
-                                padding: '10px',
-                                marginTop: '4px',
-                            }}
+                            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', marginTop: '4px' }}
                         >
                             <FileEdit size={16} />
                             {creatingDraft ? 'Membuat...' : 'Buat & Edit'}
@@ -303,7 +259,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Row 3: Recent Activity + Quick Access */}
-            <div className="grid gap-6" style={{ gridTemplateColumns: '2fr 1fr' }}>
+            <div className="dash-row">
                 {/* Recent Activity */}
                 <div className="card" style={{ padding: '24px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -321,7 +277,7 @@ export default function AdminDashboard() {
                     ) : recentSubs.length === 0 ? (
                         <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>Belum ada aktivitas.</p>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
                             {recentSubs.map((sub, i) => {
                                 const color = statusColors[sub.status] || '#94a3b8';
                                 const label = statusLabels[sub.status] || sub.status;
@@ -333,52 +289,31 @@ export default function AdminDashboard() {
                                         padding: '12px 8px',
                                         borderBottom: i < recentSubs.length - 1 ? '1px solid var(--border)' : 'none',
                                     }}>
-                                        {/* Avatar */}
                                         <div style={{
-                                            width: '36px',
-                                            height: '36px',
-                                            borderRadius: '50%',
-                                            background: `${color}18`,
-                                            color: color,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            fontWeight: '700',
-                                            fontSize: '0.82rem',
-                                            flexShrink: 0,
+                                            width: '36px', height: '36px', borderRadius: '50%',
+                                            background: `${color}18`, color: color,
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            fontWeight: '700', fontSize: '0.82rem', flexShrink: 0,
                                         }}>
                                             {sub.full_name?.charAt(0)?.toUpperCase() || '?'}
                                         </div>
-                                        {/* Details */}
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: '600', fontSize: '0.88rem' }}>{sub.full_name}</div>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontWeight: '600', fontSize: '0.88rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub.full_name}</div>
                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', gap: '8px', marginTop: '2px' }}>
-                                                <span>{sub.exams?.title || 'Unknown'}</span>
+                                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub.exams?.title || 'Unknown'}</span>
                                                 <span>•</span>
-                                                <span>{new Date(sub.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</span>
+                                                <span style={{ whiteSpace: 'nowrap' }}>{new Date(sub.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</span>
                                             </div>
                                         </div>
-                                        {/* Status Badge */}
                                         <span style={{
-                                            fontSize: '0.7rem',
-                                            padding: '3px 8px',
-                                            borderRadius: '999px',
-                                            background: `${color}15`,
-                                            color: color,
-                                            fontWeight: '600',
+                                            fontSize: '0.7rem', padding: '3px 8px', borderRadius: '999px',
+                                            background: `${color}15`, color: color, fontWeight: '600', whiteSpace: 'nowrap', flexShrink: 0,
                                         }}>
                                             {label}
                                         </span>
-                                        {/* Quick Action */}
                                         <Link
                                             href={`/admin/responses/${sub.exam_id}`}
-                                            style={{
-                                                color: 'var(--text-muted)',
-                                                display: 'flex',
-                                                padding: '4px',
-                                                borderRadius: '6px',
-                                                transition: 'color 0.15s',
-                                            }}
+                                            style={{ color: 'var(--text-muted)', display: 'flex', padding: '4px', borderRadius: '6px', transition: 'color 0.15s', flexShrink: 0 }}
                                             onMouseOver={(e) => { e.currentTarget.style.color = 'var(--primary)'; }}
                                             onMouseOut={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; }}
                                         >
@@ -425,15 +360,7 @@ function StatCard({ icon, label, value, color, trend }: { icon: React.ReactNode;
             onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
         >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                <div style={{
-                    padding: '8px',
-                    background: `${color}12`,
-                    borderRadius: '8px',
-                    color: color,
-                    display: 'flex',
-                }}>
-                    {icon}
-                </div>
+                <div style={{ padding: '8px', background: `${color}12`, borderRadius: '8px', color: color, display: 'flex' }}>{icon}</div>
                 <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{label}</span>
             </div>
             <div style={{ fontSize: '1.6rem', fontWeight: '700', lineHeight: 1 }}>{value}</div>
@@ -445,18 +372,9 @@ function StatCard({ icon, label, value, color, trend }: { icon: React.ReactNode;
 function QuickBtn({ href, icon, label, color }: { href: string; icon: React.ReactNode; label: string; color: string }) {
     return (
         <Link href={href} style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '14px 8px',
-            borderRadius: '10px',
-            border: '1px solid var(--border)',
-            textDecoration: 'none',
-            color: 'var(--text)',
-            fontSize: '0.78rem',
-            fontWeight: '500',
-            transition: 'all 0.2s',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
+            padding: '14px 8px', borderRadius: '10px', border: '1px solid var(--border)',
+            textDecoration: 'none', color: 'var(--text)', fontSize: '0.78rem', fontWeight: '500', transition: 'all 0.2s',
         }}
             onMouseOver={(e) => { e.currentTarget.style.borderColor = color; e.currentTarget.style.background = `${color}08`; e.currentTarget.style.transform = 'translateY(-1px)'; }}
             onMouseOut={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; }}

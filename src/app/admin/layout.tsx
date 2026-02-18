@@ -3,12 +3,13 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { LayoutDashboard, FileText, Users, Mail, Settings, PieChart, BookOpen, LogOut } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Mail, Settings, PieChart, BookOpen, LogOut, Menu, X } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const [signingOut, setSigningOut] = React.useState(false);
+    const [sidebarOpen, setSidebarOpen] = React.useState(false);
 
     async function handleSignOut() {
         setSigningOut(true);
@@ -19,7 +20,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     return (
         <div className="admin-layout" style={{ display: 'flex', minHeight: '100vh' }}>
-            <aside className="sidebar" style={{
+            {/* Mobile hamburger */}
+            <button
+                className="mobile-menu-btn"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                aria-label="Toggle menu"
+            >
+                {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+
+            {/* Mobile overlay */}
+            <div
+                className={`sidebar-overlay ${sidebarOpen ? 'sidebar-open' : ''}`}
+                onClick={() => setSidebarOpen(false)}
+            />
+
+            <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`} style={{
                 width: '260px',
                 background: 'var(--primary)',
                 color: 'white',
@@ -34,13 +50,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     </div>
 
                     <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <AdminNavLink href="/admin" icon={<LayoutDashboard size={20} />} label="Dashboard" />
-                        <AdminNavLink href="/admin/exams" icon={<FileText size={20} />} label="Manage Tests" />
-                        <AdminNavLink href="/admin/participants" icon={<Users size={20} />} label="Participants" />
-                        <AdminNavLink href="/admin/responses" icon={<PieChart size={20} />} label="Responses" />
-                        <AdminNavLink href="/admin/emails" icon={<Mail size={20} />} label="Email Center" />
-                        <AdminNavLink href="/admin/docs" icon={<BookOpen size={20} />} label="Dokumentasi" />
-                        <AdminNavLink href="/admin/settings" icon={<Settings size={20} />} label="Settings" />
+                        <AdminNavLink href="/admin" icon={<LayoutDashboard size={20} />} label="Dashboard" onClick={() => setSidebarOpen(false)} />
+                        <AdminNavLink href="/admin/exams" icon={<FileText size={20} />} label="Manage Tests" onClick={() => setSidebarOpen(false)} />
+                        <AdminNavLink href="/admin/participants" icon={<Users size={20} />} label="Participants" onClick={() => setSidebarOpen(false)} />
+                        <AdminNavLink href="/admin/responses" icon={<PieChart size={20} />} label="Responses" onClick={() => setSidebarOpen(false)} />
+                        <AdminNavLink href="/admin/emails" icon={<Mail size={20} />} label="Email Center" onClick={() => setSidebarOpen(false)} />
+                        <AdminNavLink href="/admin/docs" icon={<BookOpen size={20} />} label="Dokumentasi" onClick={() => setSidebarOpen(false)} />
+                        <AdminNavLink href="/admin/settings" icon={<Settings size={20} />} label="Settings" onClick={() => setSidebarOpen(false)} />
                     </nav>
                 </div>
 
@@ -48,20 +64,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     onClick={handleSignOut}
                     disabled={signingOut}
                     style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        padding: '12px 16px',
-                        borderRadius: 'var(--radius)',
-                        color: 'rgba(255, 255, 255, 0.7)',
-                        background: 'rgba(255, 255, 255, 0.08)',
-                        border: '1px solid rgba(255, 255, 255, 0.15)',
-                        fontSize: '0.95rem',
-                        fontWeight: '500',
-                        cursor: signingOut ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s ease',
-                        width: '100%',
-                        opacity: signingOut ? 0.5 : 1,
+                        display: 'flex', alignItems: 'center', gap: '12px',
+                        padding: '12px 16px', borderRadius: 'var(--radius)',
+                        color: 'rgba(255, 255, 255, 0.7)', background: 'rgba(255, 255, 255, 0.08)',
+                        border: '1px solid rgba(255, 255, 255, 0.15)', fontSize: '0.95rem',
+                        fontWeight: '500', cursor: signingOut ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s ease', width: '100%', opacity: signingOut ? 0.5 : 1,
                     }}
                     onMouseOver={(e) => {
                         if (!signingOut) {
@@ -81,26 +89,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </button>
             </aside>
 
-            <main style={{ flex: 1, padding: '40px', backgroundColor: 'var(--background)' }}>
+            <main style={{ flex: 1, padding: '40px', backgroundColor: 'var(--background)', overflow: 'auto' }}>
                 {children}
             </main>
         </div>
     );
 }
 
-function AdminNavLink({ href, icon, label }: { href: string, icon: React.ReactNode, label: string }) {
+function AdminNavLink({ href, icon, label, onClick }: { href: string, icon: React.ReactNode, label: string, onClick?: () => void }) {
     return (
-        <Link href={href} style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            padding: '12px 16px',
-            borderRadius: 'var(--radius)',
-            color: 'rgba(255, 255, 255, 0.8)',
-            textDecoration: 'none',
-            fontSize: '0.95rem',
-            fontWeight: '500',
-            transition: 'all 0.2s ease'
+        <Link href={href} onClick={onClick} style={{
+            display: 'flex', alignItems: 'center', gap: '12px',
+            padding: '12px 16px', borderRadius: 'var(--radius)',
+            color: 'rgba(255, 255, 255, 0.8)', textDecoration: 'none',
+            fontSize: '0.95rem', fontWeight: '500', transition: 'all 0.2s ease'
         }}
             onMouseOver={(e) => {
                 e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
