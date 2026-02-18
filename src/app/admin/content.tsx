@@ -109,7 +109,7 @@ export default function AdminDashboard() {
                 <div className="card" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', color: 'white' }}>
                     <h3>Quick Help</h3>
                     <p style={{ margin: '16px 0', opacity: 0.9 }}>Need help managing your tests or participants? Check our documentation or contact support.</p>
-                    <button className="btn btn-secondary" style={{ width: '100%' }}>View Docs</button>
+                    <Link href="/admin/docs" className="btn btn-secondary" style={{ width: '100%', textAlign: 'center', textDecoration: 'none' }}>View Docs</Link>
                 </div>
             </div>
         </div>
