@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronLeft, Save, Plus, Trash2, Settings, Eye, Clock, Download, ExternalLink, Mail, CheckCircle } from 'lucide-react';
+import { ChevronLeft, Save, Plus, Trash2, Settings, Eye, Clock, Download, ExternalLink, Mail, CheckCircle, Upload, ToggleLeft, ToggleRight, Palette, Move, Type } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import QuestionEditor from '@/components/QuestionEditor';
 import QuestionInput from '@/components/QuestionInput';
@@ -32,9 +32,20 @@ export default function ExamDetailsPage() {
         passing_score: 70,
         certificate_bg: '',
         certificate_title: 'CERTIFICATE OF COMPLETION',
-        materials: [] as { title: string, url: string }[]
+        materials: [] as { title: string, url: string }[],
+        certificate_enabled: true,
+        materials_enabled: true,
+        cert_mode: 'auto' as 'auto' | 'template',
+        text_positions: {
+            name: { x: 50, y: 42, fontSize: 26, color: '#1B2B4B' },
+            score: { x: 50, y: 60, fontSize: 20, color: '#8A151B' },
+            exam: { x: 50, y: 74, fontSize: 14, color: '#1B2B4B' },
+            date: { x: 50, y: 83, fontSize: 11, color: '#1B2B4B' },
+        } as Record<string, { x: number; y: number; fontSize: number; color: string }>
     });
     const [uploadingCert, setUploadingCert] = useState(false);
+    const [dragging, setDragging] = useState<string | null>(null);
+    const previewRef = React.useRef<HTMLDivElement>(null);
 
 
     useEffect(() => {
@@ -57,7 +68,16 @@ export default function ExamDetailsPage() {
                 passing_score: s.passing_score || 70,
                 certificate_bg: s.certificate_bg || '',
                 certificate_title: s.certificate_title || 'CERTIFICATE OF COMPLETION',
-                materials: s.materials || []
+                materials: s.materials || [],
+                certificate_enabled: s.certificate_enabled !== false,
+                materials_enabled: s.materials_enabled !== false,
+                cert_mode: s.cert_mode || 'auto',
+                text_positions: s.text_positions || {
+                    name: { x: 50, y: 42, fontSize: 26, color: '#1B2B4B' },
+                    score: { x: 50, y: 60, fontSize: 20, color: '#8A151B' },
+                    exam: { x: 50, y: 74, fontSize: 14, color: '#1B2B4B' },
+                    date: { x: 50, y: 83, fontSize: 11, color: '#1B2B4B' },
+                }
             });
 
             const { data: qData } = await supabase.from('questions').select('*').eq('exam_id', id).order('order', { ascending: true });
@@ -121,7 +141,11 @@ export default function ExamDetailsPage() {
                     passing_score: settings.passing_score,
                     certificate_bg: settings.certificate_bg,
                     certificate_title: settings.certificate_title,
-                    materials: settings.materials
+                    materials: settings.materials,
+                    certificate_enabled: settings.certificate_enabled,
+                    materials_enabled: settings.materials_enabled,
+                    cert_mode: settings.cert_mode,
+                    text_positions: settings.text_positions
                 }
             }).eq('id', id);
 
@@ -274,237 +298,361 @@ export default function ExamDetailsPage() {
 
                             {/* Certificate Designer */}
                             <div className="card">
-                                <h3 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <CheckCircle size={18} color="var(--primary)" /> Certificate Designer
-                                </h3>
-                                <p style={{ color: 'var(--text-muted)', marginBottom: '20px', fontSize: '0.9rem' }}>
-                                    Customize the certificate issued to participants who pass this exam.
-                                </p>
-
-                                <div style={{ marginBottom: '24px' }}>
-                                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Certificate Title</label>
-                                    <input
-                                        type="text"
-                                        value={settings.certificate_title}
-                                        onChange={(e) => setSettings({ ...settings, certificate_title: e.target.value })}
-                                        style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)' }}
-                                    />
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                                        <CheckCircle size={18} color="var(--primary)" /> Certificate Designer
+                                    </h3>
+                                    <button
+                                        onClick={() => setSettings(s => ({ ...s, certificate_enabled: !s.certificate_enabled }))}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: settings.certificate_enabled ? '#10b981' : 'var(--text-muted)' }}
+                                    >
+                                        {settings.certificate_enabled ? <ToggleRight size={22} /> : <ToggleLeft size={22} />}
+                                        {settings.certificate_enabled ? 'Enabled' : 'Disabled'}
+                                    </button>
                                 </div>
 
-                                <div style={{ marginBottom: '24px' }}>
-                                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Background Image</label>
-                                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                        <label className="btn btn-secondary" style={{ cursor: 'pointer' }}>
-                                            <Plus size={16} style={{ marginRight: '6px' }} />
-                                            {uploadingCert ? 'Uploading...' : 'Upload Background'}
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                style={{ display: 'none' }}
-                                                onChange={async (e) => {
-                                                    const file = e.target.files?.[0];
-                                                    if (!file) return;
-                                                    setUploadingCert(true);
-                                                    try {
-                                                        const ext = file.name.split('.').pop();
-                                                        const fileName = `cert_bg_${Date.now()}.${ext}`;
-                                                        const { error: upErr } = await supabase.storage.from('branding').upload(fileName, file);
-                                                        if (upErr) throw upErr;
-                                                        const { data: { publicUrl } } = supabase.storage.from('branding').getPublicUrl(fileName);
-                                                        setSettings(prev => ({ ...prev, certificate_bg: publicUrl }));
-                                                    } catch (err: any) {
-                                                        alert('Upload failed: ' + err.message);
-                                                    } finally {
-                                                        setUploadingCert(false);
-                                                    }
+                                {settings.certificate_enabled && (
+                                    <>
+                                        {/* Mode Tabs */}
+                                        <div style={{ display: 'flex', gap: '0', marginBottom: '20px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                                            <button
+                                                onClick={() => setSettings(s => ({ ...s, cert_mode: 'auto' }))}
+                                                style={{
+                                                    flex: 1, padding: '10px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem',
+                                                    background: settings.cert_mode === 'auto' ? 'var(--primary)' : 'var(--background)',
+                                                    color: settings.cert_mode === 'auto' ? '#fff' : 'var(--text-muted)'
                                                 }}
-                                            />
-                                        </label>
-                                        {settings.certificate_bg && (
-                                            <button className="btn-ghost" onClick={() => setSettings({ ...settings, certificate_bg: '' })} style={{ color: '#ef4444' }}>
-                                                Remove
+                                            >
+                                                <Palette size={14} style={{ marginRight: '6px', verticalAlign: '-2px' }} />
+                                                Auto-Generate
                                             </button>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Preview */}
-                                <div style={{
-                                    position: 'relative',
-                                    width: '100%',
-                                    aspectRatio: '1.414 / 1', // A4 Landscape
-                                    border: '1px solid var(--border)',
-                                    borderRadius: '8px',
-                                    overflow: 'hidden',
-                                    background: '#fff',
-                                }}>
-                                    {settings.certificate_bg && (
-                                        <img
-                                            src={settings.certificate_bg}
-                                            alt="Certificate Background"
-                                            style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover' }}
-                                        />
-                                    )}
-
-                                    {/* Default decorative elements (shown when no custom bg) */}
-                                    {!settings.certificate_bg && (
-                                        <>
-                                            {/* Top maroon bar */}
-                                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: '#8A151B' }} />
-                                            {/* Bottom navy strip */}
-                                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '9%', background: '#1B2B4B' }} />
-                                            {/* Gold border frame */}
-                                            <div style={{ position: 'absolute', inset: '3%', border: '1px solid #C0823F', pointerEvents: 'none' }} />
-                                            {/* Inner subtle frame */}
-                                            <div style={{ position: 'absolute', inset: '4%', border: '0.5px solid #e6dccd', pointerEvents: 'none' }} />
-                                        </>
-                                    )}
-
-                                    {/* Overlay Preview Content */}
-                                    <div style={{
-                                        position: 'absolute', inset: 0,
-                                        display: 'flex', flexDirection: 'column', alignItems: 'center',
-                                        justifyContent: 'center',
-                                        textAlign: 'center', padding: '6% 8%',
-                                        zIndex: 1
-                                    }}>
-                                        {/* Logo */}
-                                        <img src="/logo.png" alt="LSP Logo" style={{ height: '28px', marginBottom: '2px', objectFit: 'contain' }} />
-
-                                        {/* Organization Name */}
-                                        <div style={{ fontSize: '0.5em', fontWeight: 700, color: '#1B2B4B', letterSpacing: '1.5px', marginBottom: '1px' }}>
-                                            LSP OFFICIUM NOBILE INDOLAW
-                                        </div>
-                                        <div style={{ fontSize: '0.4em', fontStyle: 'italic', color: '#64748b', marginBottom: '4px' }}>
-                                            Kompetensi Advokat Indonesia
+                                            <button
+                                                onClick={() => setSettings(s => ({ ...s, cert_mode: 'template' }))}
+                                                style={{
+                                                    flex: 1, padding: '10px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem',
+                                                    background: settings.cert_mode === 'template' ? 'var(--primary)' : 'var(--background)',
+                                                    color: settings.cert_mode === 'template' ? '#fff' : 'var(--text-muted)'
+                                                }}
+                                            >
+                                                <Upload size={14} style={{ marginRight: '6px', verticalAlign: '-2px' }} />
+                                                Custom Template
+                                            </button>
                                         </div>
 
-                                        {/* Maroon divider */}
-                                        <div style={{ width: '60px', height: '1px', background: '#8A151B', marginBottom: '6px' }} />
-
-                                        {/* Certificate Badge */}
-                                        <div style={{
-                                            background: '#8A151B', color: '#fff', padding: '3px 14px',
-                                            borderRadius: '3px', fontSize: '0.45em', fontWeight: 700,
-                                            letterSpacing: '1px', marginBottom: '6px'
-                                        }}>
-                                            {settings.certificate_title || 'CERTIFICATE OF COMPLETION'}
+                                        {/* Shared: Certificate Title */}
+                                        <div style={{ marginBottom: '20px' }}>
+                                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '0.9rem' }}>Certificate Title</label>
+                                            <input
+                                                type="text"
+                                                value={settings.certificate_title}
+                                                onChange={(e) => setSettings({ ...settings, certificate_title: e.target.value })}
+                                                style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)' }}
+                                            />
                                         </div>
 
-                                        {/* "This is to certify that" */}
-                                        <div style={{ fontSize: '0.5em', color: '#64748b', marginBottom: '4px' }}>
-                                            This is to certify that
-                                        </div>
-
-                                        {/* Name with decorative lines */}
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '2px 0' }}>
-                                            <div style={{ width: '35px', height: '1px', background: '#C0823F' }} />
-                                            <span style={{ fontSize: '1.3em', fontWeight: 700, color: '#1B2B4B' }}>
-                                                [Participant Name]
-                                            </span>
-                                            <div style={{ width: '35px', height: '1px', background: '#C0823F' }} />
-                                        </div>
-
-                                        <div style={{ fontSize: '0.5em', color: '#0f172a', lineHeight: 1.6, marginBottom: '6px' }}>
-                                            has successfully completed the certification examination<br />
-                                            and has earned the following result:
-                                        </div>
-
-                                        {/* Geometric Score Badge */}
-                                        <div style={{
-                                            position: 'relative', width: '56px', height: '56px',
-                                            margin: '2px 0 6px'
-                                        }}>
-                                            {/* Rotating squares */}
-                                            {[0, 15, 30].map((angle, i) => (
-                                                <div key={i} style={{
-                                                    position: 'absolute', inset: `${i * 4}px`,
-                                                    border: '1px solid rgba(138,21,27,0.25)',
-                                                    transform: `rotate(${angle}deg)`,
-                                                }} />
-                                            ))}
-                                            {/* Center circle */}
-                                            <div style={{
-                                                position: 'absolute', top: '50%', left: '50%',
-                                                transform: 'translate(-50%, -50%)',
-                                                width: '36px', height: '36px', borderRadius: '50%',
-                                                background: '#8A151B',
-                                                display: 'flex', flexDirection: 'column',
-                                                alignItems: 'center', justifyContent: 'center'
-                                            }}>
-                                                <span style={{ color: '#fff', fontSize: '0.8em', fontWeight: 800, lineHeight: 1 }}>95%</span>
-                                                <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.3em', letterSpacing: '1px' }}>SCORE</span>
+                                        {/* Shared: Background Upload */}
+                                        <div style={{ marginBottom: '20px' }}>
+                                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '0.9rem' }}>Background Image</label>
+                                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                                <label className="btn btn-secondary" style={{ cursor: 'pointer' }}>
+                                                    <Plus size={16} style={{ marginRight: '6px' }} />
+                                                    {uploadingCert ? 'Uploading...' : 'Upload Background'}
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        style={{ display: 'none' }}
+                                                        onChange={async (e) => {
+                                                            const file = e.target.files?.[0];
+                                                            if (!file) return;
+                                                            setUploadingCert(true);
+                                                            try {
+                                                                const ext = file.name.split('.').pop();
+                                                                const fileName = `cert_bg_${Date.now()}.${ext}`;
+                                                                const { error: upErr } = await supabase.storage.from('branding').upload(fileName, file);
+                                                                if (upErr) throw upErr;
+                                                                const { data: { publicUrl } } = supabase.storage.from('branding').getPublicUrl(fileName);
+                                                                setSettings(prev => ({ ...prev, certificate_bg: publicUrl }));
+                                                            } catch (err: any) {
+                                                                alert('Upload failed: ' + err.message);
+                                                            } finally {
+                                                                setUploadingCert(false);
+                                                            }
+                                                        }}
+                                                    />
+                                                </label>
+                                                {settings.certificate_bg && (
+                                                    <button className="btn-ghost" onClick={() => setSettings({ ...settings, certificate_bg: '' })} style={{ color: '#ef4444' }}>
+                                                        Remove
+                                                    </button>
+                                                )}
+                                                {settings.cert_mode === 'template' && (
+                                                    <a
+                                                        href="https://www.canva.com/certificates/templates/"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="btn btn-ghost"
+                                                        style={{ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none', fontSize: '0.85rem' }}
+                                                    >
+                                                        <ExternalLink size={14} /> Design in Canva
+                                                    </a>
+                                                )}
                                             </div>
+                                            {settings.cert_mode === 'template' && (
+                                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px' }}>
+                                                    💡 Design your certificate in Canva (without name/score text), export as PNG, then upload here. Drag the labels below to position where text should appear.
+                                                </p>
+                                            )}
                                         </div>
 
-                                        {/* Exam Title */}
-                                        <div style={{ fontSize: '0.7em', fontWeight: 700, color: '#1B2B4B', marginBottom: '4px' }}>
-                                            {exam.title}
-                                        </div>
+                                        {/* ── AUTO MODE PREVIEW ── */}
+                                        {settings.cert_mode === 'auto' && (
+                                            <div style={{
+                                                position: 'relative',
+                                                width: '100%',
+                                                aspectRatio: '1.414 / 1',
+                                                border: '1px solid var(--border)',
+                                                borderRadius: '8px',
+                                                overflow: 'hidden',
+                                                background: '#fff',
+                                            }}>
+                                                {settings.certificate_bg && (
+                                                    <img src={settings.certificate_bg} alt="Certificate Background" style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                )}
+                                                {!settings.certificate_bg && (
+                                                    <>
+                                                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: '#8A151B' }} />
+                                                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '9%', background: '#1B2B4B' }} />
+                                                        <div style={{ position: 'absolute', inset: '3%', border: '1px solid #C0823F', pointerEvents: 'none' }} />
+                                                        <div style={{ position: 'absolute', inset: '4%', border: '0.5px solid #e6dccd', pointerEvents: 'none' }} />
+                                                    </>
+                                                )}
+                                                <div style={{
+                                                    position: 'absolute', inset: 0,
+                                                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                                                    justifyContent: 'flex-start',
+                                                    textAlign: 'center', padding: '8% 8% 4%',
+                                                    zIndex: 1
+                                                }}>
+                                                    <img src="/logo.png" alt="LSP Logo" style={{ height: '28px', marginBottom: '2px', objectFit: 'contain' }} />
+                                                    <div style={{ fontSize: '0.5em', fontWeight: 700, color: '#1B2B4B', letterSpacing: '1.5px', marginBottom: '1px' }}>LSP OFFICIUM NOBILE INDOLAW</div>
+                                                    <div style={{ fontSize: '0.4em', fontStyle: 'italic', color: '#64748b', marginBottom: '4px' }}>Kompetensi Advokat Indonesia</div>
+                                                    <div style={{ width: '60px', height: '1px', background: '#8A151B', marginBottom: '6px' }} />
+                                                    <div style={{ background: '#8A151B', color: '#fff', padding: '3px 14px', borderRadius: '3px', fontSize: '0.45em', fontWeight: 700, letterSpacing: '1px', marginBottom: '6px' }}>
+                                                        {settings.certificate_title || 'CERTIFICATE OF COMPLETION'}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.5em', color: '#64748b', marginBottom: '4px' }}>This is to certify that</div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '2px 0' }}>
+                                                        <div style={{ width: '35px', height: '1px', background: '#C0823F' }} />
+                                                        <span style={{ fontSize: '1.3em', fontWeight: 700, color: '#1B2B4B' }}>[Participant Name]</span>
+                                                        <div style={{ width: '35px', height: '1px', background: '#C0823F' }} />
+                                                    </div>
+                                                    <div style={{ fontSize: '0.5em', color: '#0f172a', lineHeight: 1.6, marginBottom: '6px' }}>
+                                                        has successfully completed the certification examination<br />
+                                                        and has earned the following result:
+                                                    </div>
+                                                    <div style={{ position: 'relative', width: '56px', height: '56px', margin: '2px 0 6px' }}>
+                                                        {[0, 15, 30].map((angle, i) => (
+                                                            <div key={i} style={{ position: 'absolute', inset: `${i * 4}px`, border: '1px solid rgba(138,21,27,0.25)', transform: `rotate(${angle}deg)` }} />
+                                                        ))}
+                                                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '36px', height: '36px', borderRadius: '50%', background: '#8A151B', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                                            <span style={{ color: '#fff', fontSize: '0.8em', fontWeight: 800, lineHeight: 1 }}>95%</span>
+                                                            <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.3em', letterSpacing: '1px' }}>SCORE</span>
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ fontSize: '0.7em', fontWeight: 700, color: '#1B2B4B', marginBottom: '4px' }}>{exam.title}</div>
+                                                    <div style={{ fontSize: '0.4em', color: '#64748b', fontWeight: 700 }}>Awarded on:</div>
+                                                    <div style={{ fontSize: '0.55em', color: '#1B2B4B', fontWeight: 600 }}>
+                                                        {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
 
-                                        {/* Date */}
-                                        <div style={{ fontSize: '0.4em', color: '#64748b', fontWeight: 700 }}>Awarded on:</div>
-                                        <div style={{ fontSize: '0.55em', color: '#1B2B4B', fontWeight: 600 }}>
-                                            {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                        </div>
-                                    </div>
-                                </div>
+                                        {/* ── TEMPLATE MODE PREVIEW WITH DRAGGABLE TEXT ── */}
+                                        {settings.cert_mode === 'template' && (
+                                            <>
+                                                <div
+                                                    ref={previewRef}
+                                                    style={{
+                                                        position: 'relative',
+                                                        width: '100%',
+                                                        aspectRatio: '1.414 / 1',
+                                                        border: '2px dashed var(--border)',
+                                                        borderRadius: '8px',
+                                                        overflow: 'hidden',
+                                                        background: settings.certificate_bg ? 'transparent' : '#f8f9fa',
+                                                        cursor: dragging ? 'grabbing' : 'default',
+                                                    }}
+                                                    onMouseMove={(e) => {
+                                                        if (!dragging || !previewRef.current) return;
+                                                        const rect = previewRef.current.getBoundingClientRect();
+                                                        const x = Math.max(5, Math.min(95, ((e.clientX - rect.left) / rect.width) * 100));
+                                                        const y = Math.max(5, Math.min(95, ((e.clientY - rect.top) / rect.height) * 100));
+                                                        setSettings(s => ({
+                                                            ...s,
+                                                            text_positions: { ...s.text_positions, [dragging]: { ...s.text_positions[dragging], x, y } }
+                                                        }));
+                                                    }}
+                                                    onMouseUp={() => setDragging(null)}
+                                                    onMouseLeave={() => setDragging(null)}
+                                                >
+                                                    {settings.certificate_bg && (
+                                                        <img src={settings.certificate_bg} alt="Template" style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
+                                                    )}
+                                                    {!settings.certificate_bg && (
+                                                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                                                            Upload a background image to get started
+                                                        </div>
+                                                    )}
+                                                    {/* Draggable text labels */}
+                                                    {Object.entries(settings.text_positions).map(([key, pos]) => {
+                                                        const labels: Record<string, string> = { name: '[Participant Name]', score: '[95%]', exam: `[${exam.title}]`, date: '[18 Feb 2026]' };
+                                                        return (
+                                                            <div
+                                                                key={key}
+                                                                onMouseDown={(e) => { e.preventDefault(); setDragging(key); }}
+                                                                style={{
+                                                                    position: 'absolute',
+                                                                    left: `${pos.x}%`,
+                                                                    top: `${pos.y}%`,
+                                                                    transform: 'translate(-50%, -50%)',
+                                                                    cursor: dragging === key ? 'grabbing' : 'grab',
+                                                                    padding: '2px 8px',
+                                                                    borderRadius: '4px',
+                                                                    border: dragging === key ? '2px solid var(--primary)' : '1px dashed rgba(138,21,27,0.4)',
+                                                                    background: dragging === key ? 'rgba(138,21,27,0.1)' : 'rgba(255,255,255,0.85)',
+                                                                    fontSize: `${Math.max(8, pos.fontSize * 0.45)}px`,
+                                                                    fontWeight: key === 'name' ? 700 : 600,
+                                                                    color: pos.color,
+                                                                    whiteSpace: 'nowrap',
+                                                                    zIndex: dragging === key ? 10 : 2,
+                                                                    userSelect: 'none',
+                                                                    transition: dragging === key ? 'none' : 'border 0.15s',
+                                                                }}
+                                                            >
+                                                                <Move size={10} style={{ marginRight: '4px', verticalAlign: '-1px', opacity: 0.5 }} />
+                                                                {labels[key] || key}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+
+                                                {/* Text Position Controls */}
+                                                <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                                    {Object.entries(settings.text_positions).map(([key, pos]) => (
+                                                        <div key={key} style={{ padding: '10px', background: 'var(--background)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                                                            <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'capitalize', marginBottom: '6px', color: 'var(--text-muted)' }}>
+                                                                <Type size={12} style={{ marginRight: '4px', verticalAlign: '-2px' }} />{key}
+                                                            </div>
+                                                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                                                <input
+                                                                    type="number"
+                                                                    value={pos.fontSize}
+                                                                    onChange={(e) => setSettings(s => ({
+                                                                        ...s,
+                                                                        text_positions: { ...s.text_positions, [key]: { ...pos, fontSize: parseInt(e.target.value) || 12 } }
+                                                                    }))}
+                                                                    style={{ width: '50px', padding: '4px', borderRadius: '4px', border: '1px solid var(--border)', fontSize: '0.75rem' }}
+                                                                    title="Font size (pt)"
+                                                                />
+                                                                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>pt</span>
+                                                                <input
+                                                                    type="color"
+                                                                    value={pos.color}
+                                                                    onChange={(e) => setSettings(s => ({
+                                                                        ...s,
+                                                                        text_positions: { ...s.text_positions, [key]: { ...pos, color: e.target.value } }
+                                                                    }))}
+                                                                    style={{ width: '24px', height: '24px', border: 'none', padding: 0, cursor: 'pointer' }}
+                                                                    title="Text color"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </>
+                                        )}
+                                    </>
+                                )}
+
+                                {!settings.certificate_enabled && (
+                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontStyle: 'italic' }}>
+                                        Certificate is disabled for this exam. Participants will not see a certificate download option.
+                                    </p>
+                                )}
                             </div>
 
                             {/* Learning Materials */}
                             <div className="card">
-                                <h3 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <ExternalLink size={18} color="var(--primary)" /> Learning Materials
-                                </h3>
-                                <p style={{ color: 'var(--text-muted)', marginBottom: '20px', fontSize: '0.9rem' }}>
-                                    Add study resources for participants. These will appear on their dashboard.
-                                </p>
-
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    {settings.materials.map((mat, idx) => (
-                                        <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                            <input
-                                                type="text"
-                                                placeholder="Title (e.g. Study Guide)"
-                                                value={mat.title}
-                                                onChange={(e) => {
-                                                    const newMats = [...settings.materials];
-                                                    newMats[idx].title = e.target.value;
-                                                    setSettings({ ...settings, materials: newMats });
-                                                }}
-                                                style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid var(--border)' }}
-                                            />
-                                            <input
-                                                type="text"
-                                                placeholder="URL (https://...)"
-                                                value={mat.url}
-                                                onChange={(e) => {
-                                                    const newMats = [...settings.materials];
-                                                    newMats[idx].url = e.target.value;
-                                                    setSettings({ ...settings, materials: newMats });
-                                                }}
-                                                style={{ flex: 2, padding: '8px', borderRadius: '6px', border: '1px solid var(--border)' }}
-                                            />
-                                            <button
-                                                className="btn-ghost"
-                                                onClick={() => {
-                                                    const newMats = settings.materials.filter((_, i) => i !== idx);
-                                                    setSettings({ ...settings, materials: newMats });
-                                                }}
-                                                style={{ color: '#ef4444' }}
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
-                                        </div>
-                                    ))}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                                        <ExternalLink size={18} color="var(--primary)" /> Learning Materials
+                                    </h3>
                                     <button
-                                        className="btn btn-secondary"
-                                        onClick={() => setSettings({ ...settings, materials: [...settings.materials, { title: '', url: '' }] })}
-                                        style={{ width: 'fit-content', marginTop: '8px' }}
+                                        onClick={() => setSettings(s => ({ ...s, materials_enabled: !s.materials_enabled }))}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: settings.materials_enabled ? '#10b981' : 'var(--text-muted)' }}
                                     >
-                                        <Plus size={16} style={{ marginRight: '6px' }} /> Add Material
+                                        {settings.materials_enabled ? <ToggleRight size={22} /> : <ToggleLeft size={22} />}
+                                        {settings.materials_enabled ? 'Enabled' : 'Disabled'}
                                     </button>
                                 </div>
+
+                                {settings.materials_enabled ? (
+                                    <>
+                                        <p style={{ color: 'var(--text-muted)', marginBottom: '20px', fontSize: '0.9rem' }}>
+                                            Add study resources for participants. These will appear on their dashboard.
+                                        </p>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                            {settings.materials.map((mat, idx) => (
+                                                <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Title (e.g. Study Guide)"
+                                                        value={mat.title}
+                                                        onChange={(e) => {
+                                                            const newMats = [...settings.materials];
+                                                            newMats[idx].title = e.target.value;
+                                                            setSettings({ ...settings, materials: newMats });
+                                                        }}
+                                                        style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid var(--border)' }}
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        placeholder="URL (https://...)"
+                                                        value={mat.url}
+                                                        onChange={(e) => {
+                                                            const newMats = [...settings.materials];
+                                                            newMats[idx].url = e.target.value;
+                                                            setSettings({ ...settings, materials: newMats });
+                                                        }}
+                                                        style={{ flex: 2, padding: '8px', borderRadius: '6px', border: '1px solid var(--border)' }}
+                                                    />
+                                                    <button
+                                                        className="btn-ghost"
+                                                        onClick={() => {
+                                                            const newMats = settings.materials.filter((_, i) => i !== idx);
+                                                            setSettings({ ...settings, materials: newMats });
+                                                        }}
+                                                        style={{ color: '#ef4444' }}
+                                                    >
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            <button
+                                                className="btn btn-secondary"
+                                                onClick={() => setSettings({ ...settings, materials: [...settings.materials, { title: '', url: '' }] })}
+                                                style={{ width: 'fit-content', marginTop: '8px' }}
+                                            >
+                                                <Plus size={16} style={{ marginRight: '6px' }} /> Add Material
+                                            </button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontStyle: 'italic' }}>
+                                        Learning materials are disabled for this exam.
+                                    </p>
+                                )}
                             </div>
                         </div>
 
@@ -539,6 +687,7 @@ export default function ExamDetailsPage() {
                     </div>
                 )}
 
+
             {activeTab === 'questions' && (
                 <div className="grid" style={{ gridTemplateColumns: '1fr 340px', gap: '32px' }}>
                     <div className="flex-column" style={{ gap: '24px' }}>
@@ -571,12 +720,12 @@ export default function ExamDetailsPage() {
                                     <Plus size={18} /> Add Question
                                 </button>
                             </div>
-                            {questions.map((q, i) => (
+                            {questions.map((q: any, i: number) => (
                                 <QuestionEditor
                                     key={q.id || i}
                                     index={i}
                                     question={q}
-                                    onUpdate={(data) => updateQuestion(i, data)}
+                                    onUpdate={(data: any) => updateQuestion(i, data)}
                                     onDelete={() => deleteQuestion(i)}
                                 />
                             ))}
@@ -626,7 +775,7 @@ export default function ExamDetailsPage() {
                             <tbody>
                                 {participants.length === 0 ? (
                                     <tr><td colSpan={4} style={{ padding: '40px', textAlign: 'center' }}>No responses yet.</td></tr>
-                                ) : participants.map(p => (
+                                ) : participants.map((p: any) => (
                                     <tr key={p.id} style={{ borderBottom: '1px solid var(--border)' }}>
                                         <td style={{ padding: '16px 24px' }}>
                                             <div style={{ fontWeight: '600' }}>{p.full_name}</div>
@@ -682,7 +831,8 @@ export default function ExamDetailsPage() {
                     </div>
                 </div>
             )}
-        </div>
+
+        </div >
     );
 }
 
