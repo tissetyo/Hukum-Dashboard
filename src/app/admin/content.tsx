@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Users, FileText, CheckCircle, TrendingUp } from 'lucide-react';
+import { Users, FileText, CheckCircle, TrendingUp, Plus, PieChart, Mail, BookOpen } from 'lucide-react';
 
 
 export default function AdminDashboard() {
@@ -74,6 +74,54 @@ export default function AdminDashboard() {
                 <StatCard icon={<TrendingUp color="#f59e0b" />} label="Avg. Score" value={`${stats.avgScore}%`} />
             </div>
 
+            <div style={{ marginBottom: '32px' }}>
+                <h3 style={{ marginBottom: '16px', fontSize: '1.1rem' }}>Quick Access</h3>
+                <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+                    <QuickAccessCard
+                        href="/admin/exams"
+                        icon={<FileText size={24} />}
+                        title="Kelola Ujian"
+                        desc="Buat & atur ujian sertifikasi"
+                        color="#8b5cf6"
+                    />
+                    <QuickAccessCard
+                        href="/admin/exams/new"
+                        icon={<Plus size={24} />}
+                        title="Buat Ujian Baru"
+                        desc="Mulai membuat ujian baru"
+                        color="#10b981"
+                    />
+                    <QuickAccessCard
+                        href="/admin/participants"
+                        icon={<Users size={24} />}
+                        title="Peserta"
+                        desc="Kelola & nilai peserta"
+                        color="#3b82f6"
+                    />
+                    <QuickAccessCard
+                        href="/admin/responses"
+                        icon={<PieChart size={24} />}
+                        title="Lihat Jawaban"
+                        desc="Periksa jawaban per ujian"
+                        color="#f59e0b"
+                    />
+                    <QuickAccessCard
+                        href="/admin/emails"
+                        icon={<Mail size={24} />}
+                        title="Email Center"
+                        desc="Kirim email ke peserta"
+                        color="#ec4899"
+                    />
+                    <QuickAccessCard
+                        href="/admin/docs"
+                        icon={<BookOpen size={24} />}
+                        title="Dokumentasi"
+                        desc="Panduan penggunaan sistem"
+                        color="#06b6d4"
+                    />
+                </div>
+            </div>
+
             <div className="grid gap-8" style={{ gridTemplateColumns: '2fr 1fr' }}>
                 <div className="card">
                     <h3 style={{ marginBottom: '20px' }}>Recent Activity</h3>
@@ -131,6 +179,48 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode, label: string
 }
 
 import Link from 'next/link';
+
+function QuickAccessCard({ href, icon, title, desc, color }: { href: string; icon: React.ReactNode; title: string; desc: string; color: string }) {
+    return (
+        <Link href={href} style={{ textDecoration: 'none', color: 'inherit' }}>
+            <div className="card" style={{
+                padding: '20px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                border: '1px solid var(--border)',
+                position: 'relative',
+                overflow: 'hidden',
+            }}
+                onMouseOver={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.08)';
+                }}
+                onMouseOut={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                }}
+            >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    <div style={{
+                        padding: '10px',
+                        background: `${color}15`,
+                        borderRadius: '10px',
+                        color: color,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
+                        {icon}
+                    </div>
+                    <div>
+                        <div style={{ fontWeight: '600', fontSize: '0.95rem' }}>{title}</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>{desc}</div>
+                    </div>
+                </div>
+            </div>
+        </Link>
+    );
+}
 
 function RecentRow({ name, test, status, examId }: { name: string, test: string, status: string, examId: string }) {
     // Normalize status to match standard keys or just use what comes from DB if they match
