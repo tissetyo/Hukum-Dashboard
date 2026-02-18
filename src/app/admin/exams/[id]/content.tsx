@@ -9,6 +9,7 @@ import QuestionInput from '@/components/QuestionInput';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Link from 'next/link';
+import { exportCertificatePDF } from '@/lib/pdf';
 
 export default function ExamDetailsPage() {
     const supabase = createClient();
@@ -20,6 +21,9 @@ export default function ExamDetailsPage() {
     const [questions, setQuestions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+
+
 
     // Responses State
     const [participants, setParticipants] = useState<any[]>([]);
@@ -47,6 +51,24 @@ export default function ExamDetailsPage() {
     const [dragging, setDragging] = useState<string | null>(null);
     const previewRef = React.useRef<HTMLDivElement>(null);
 
+
+    useEffect(() => {
+        if (!exam || !settings.certificate_enabled) return;
+
+        const timer = setTimeout(() => {
+            const dummyParticipant = {
+                full_name: '[Participant Name]',
+                score: 95,
+                end_time: new Date().toISOString()
+            };
+            const dummyExam = { title: exam.title || 'Exam Title' };
+            exportCertificatePDF(dummyParticipant, dummyExam, settings, true).then((url) => {
+                if (typeof url === 'string') setPdfPreviewUrl(url);
+            });
+        }, 800); // 800ms debounce
+
+        return () => clearTimeout(timer);
+    }, [settings, exam]);
 
     useEffect(() => {
         if (id) {
@@ -374,59 +396,35 @@ export default function ExamDetailsPage() {
                                             border: '1px solid var(--border)',
                                             borderRadius: '8px',
                                             overflow: 'hidden',
-                                            background: '#fff',
+                                            background: '#f8fafc',
                                         }}>
-                                            {settings.certificate_bg && (
-                                                <img src={settings.certificate_bg} alt="Certificate Background" style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            {pdfPreviewUrl ? (
+                                                <iframe
+                                                    src={pdfPreviewUrl}
+                                                    style={{ width: '100%', height: '100%', border: 'none' }}
+                                                    title="Certificate Preview"
+                                                />
+                                            ) : (
+                                                <div style={{
+                                                    position: 'absolute', inset: 0,
+                                                    display: 'flex', flexDirection: 'column',
+                                                    alignItems: 'center', justifyContent: 'center',
+                                                    color: 'var(--text-muted)', gap: '10px'
+                                                }}>
+                                                    <div style={{
+                                                        width: '24px', height: '24px',
+                                                        border: '3px solid var(--border)',
+                                                        borderTopColor: 'var(--primary)',
+                                                        borderRadius: '50%',
+                                                        animation: 'spin 1s linear infinite'
+                                                    }} />
+                                                    <span style={{ fontSize: '0.9rem' }}>Generating Preview...</span>
+                                                </div>
                                             )}
-                                            {!settings.certificate_bg && (
-                                                <>
-                                                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: '#8A151B' }} />
-                                                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '9%', background: '#1B2B4B' }} />
-                                                    <div style={{ position: 'absolute', inset: '3%', border: '1px solid #C0823F', pointerEvents: 'none' }} />
-                                                    <div style={{ position: 'absolute', inset: '4%', border: '0.5px solid #e6dccd', pointerEvents: 'none' }} />
-                                                </>
-                                            )}
-                                            <div style={{
-                                                position: 'absolute', inset: 0,
-                                                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                                                justifyContent: 'flex-start',
-                                                textAlign: 'center', padding: '8% 8% 4%',
-                                                zIndex: 1
-                                            }}>
-                                                <img src="/logo.png" alt="LSP Logo" style={{ height: '28px', marginBottom: '2px', objectFit: 'contain' }} />
-                                                <div style={{ fontSize: '0.5em', fontWeight: 700, color: '#1B2B4B', letterSpacing: '1.5px', marginBottom: '1px' }}>LSP OFFICIUM NOBILE INDOLAW</div>
-                                                <div style={{ fontSize: '0.4em', fontStyle: 'italic', color: '#64748b', marginBottom: '4px' }}>Kompetensi Advokat Indonesia</div>
-                                                <div style={{ width: '60px', height: '1px', background: '#8A151B', marginBottom: '6px' }} />
-                                                <div style={{ background: '#8A151B', color: '#fff', padding: '3px 14px', borderRadius: '3px', fontSize: '0.45em', fontWeight: 700, letterSpacing: '1px', marginBottom: '6px' }}>
-                                                    {settings.certificate_title || 'CERTIFICATE OF COMPLETION'}
-                                                </div>
-                                                <div style={{ fontSize: '0.5em', color: '#64748b', marginBottom: '4px' }}>This is to certify that</div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '2px 0' }}>
-                                                    <div style={{ width: '35px', height: '1px', background: '#C0823F' }} />
-                                                    <span style={{ fontSize: '1.3em', fontWeight: 700, color: '#1B2B4B' }}>[Participant Name]</span>
-                                                    <div style={{ width: '35px', height: '1px', background: '#C0823F' }} />
-                                                </div>
-                                                <div style={{ fontSize: '0.5em', color: '#0f172a', lineHeight: 1.6, marginBottom: '6px' }}>
-                                                    has successfully completed the certification examination<br />
-                                                    and has earned the following result:
-                                                </div>
-                                                <div style={{ position: 'relative', width: '56px', height: '56px', margin: '2px 0 6px' }}>
-                                                    {[0, 15, 30].map((angle, i) => (
-                                                        <div key={i} style={{ position: 'absolute', inset: `${i * 4}px`, border: '1px solid rgba(138,21,27,0.25)', transform: `rotate(${angle}deg)` }} />
-                                                    ))}
-                                                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '36px', height: '36px', borderRadius: '50%', background: '#8A151B', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                                                        <span style={{ color: '#fff', fontSize: '0.8em', fontWeight: 800, lineHeight: 1 }}>95%</span>
-                                                        <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.3em', letterSpacing: '1px' }}>SCORE</span>
-                                                    </div>
-                                                </div>
-                                                <div style={{ fontSize: '0.7em', fontWeight: 700, color: '#1B2B4B', marginBottom: '4px' }}>{exam.title}</div>
-                                                <div style={{ fontSize: '0.4em', color: '#64748b', fontWeight: 700 }}>Awarded on:</div>
-                                                <div style={{ fontSize: '0.55em', color: '#1B2B4B', fontWeight: 600 }}>
-                                                    {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                                </div>
-                                            </div>
                                         </div>
+                                        <style jsx>{`
+                                            @keyframes spin { to { transform: rotate(360deg); } }
+                                        `}</style>
                                     </>
                                 )}
 
