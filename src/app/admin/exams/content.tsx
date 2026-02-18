@@ -2,15 +2,26 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, Search, MoreVertical, Edit, Trash2, Eye, FileText, Download, Share2 } from 'lucide-react';
+import { Plus, Search, MoreVertical, Edit, Trash2, Eye, FileText, Download, Share2, ClipboardList, Settings, Share, Save } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { exportExamToPDF } from '@/lib/pdf';
+import PageHelp from '@/components/admin/PageHelp';
+import WorkflowModal, { WorkflowStep } from '@/components/admin/WorkflowModal';
 
 
 export default function ExamsListPage() {
     const supabase = createClient();
     const [exams, setExams] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showWorkflow, setShowWorkflow] = useState(false);
+
+    const workflowSteps: WorkflowStep[] = [
+        { icon: <Plus size={22} />, title: 'Buat Ujian Baru', description: 'Klik tombol "Create New Test" untuk memulai. Isi judul, deskripsi, dan durasi ujian.', actionLabel: 'Buat Ujian', actionHref: '/admin/exams/new' },
+        { icon: <ClipboardList size={22} />, title: 'Tambah Soal', description: 'Tambahkan soal pilihan ganda atau essay. Atur urutan dan bobot nilai setiap soal.' },
+        { icon: <Settings size={22} />, title: 'Atur Pengaturan', description: 'Tentukan durasi ujian, passing grade, dan pengaturan lainnya sesuai kebutuhan.' },
+        { icon: <Save size={22} />, title: 'Simpan Ujian', description: 'Klik "Save" untuk menyimpan ujian. Ujian akan muncul di daftar ini.' },
+        { icon: <Share size={22} />, title: 'Bagikan Link', description: 'Klik ikon share (🔗) di tabel untuk menyalin link pendaftaran. Kirimkan link ini kepada peserta.' },
+    ];
 
     useEffect(() => {
         fetchExams();
@@ -29,7 +40,7 @@ export default function ExamsListPage() {
 
     return (
         <div className="fade-in">
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                 <div>
                     <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>Manage Tests</h1>
                     <p style={{ color: 'var(--text-muted)' }}>Create and manage certification exams.</p>
@@ -38,6 +49,24 @@ export default function ExamsListPage() {
                     <Plus size={20} /> Create New Test
                 </Link>
             </header>
+
+            <PageHelp
+                description="Di halaman ini Anda bisa membuat, mengedit, dan mengelola semua ujian sertifikasi. Setiap ujian bisa di-preview, diekspor ke PDF, dan dibagikan ke peserta via link pendaftaran."
+                tips={[
+                    { text: 'Klik ikon 🔗 untuk menyalin link pendaftaran ujian' },
+                    { text: 'Gunakan ikon 📥 untuk mengekspor soal ujian ke PDF' },
+                    { text: 'Preview ujian dengan ikon 👁 sebelum dibagikan' },
+                    { text: 'Ujian bisa diedit kapan saja selama belum ada peserta' },
+                ]}
+                onOpenWorkflow={() => setShowWorkflow(true)}
+            />
+
+            <WorkflowModal
+                title="Cara Membuat & Mengelola Ujian"
+                steps={workflowSteps}
+                open={showWorkflow}
+                onClose={() => setShowWorkflow(false)}
+            />
 
             <div className="card" style={{ padding: '0' }}>
                 <div style={{ padding: '20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between' }}>

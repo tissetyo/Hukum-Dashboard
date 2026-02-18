@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Mail, CheckCircle, XCircle, Download, ExternalLink, Award } from 'lucide-react';
+import { Mail, CheckCircle, XCircle, Download, ExternalLink, Award, Filter, FileCheck, Send, Upload } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import PageHelp from '@/components/admin/PageHelp';
+import WorkflowModal, { WorkflowStep } from '@/components/admin/WorkflowModal';
 
 
 export default function ParticipantsPage() {
@@ -29,6 +31,17 @@ export default function ParticipantsPage() {
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [uploadFile, setUploadFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
+
+    // Workflow State
+    const [showWorkflow, setShowWorkflow] = useState(false);
+
+    const workflowSteps: WorkflowStep[] = [
+        { icon: <Filter size={22} />, title: 'Filter Peserta', description: 'Gunakan filter "Filter by Exam" untuk menampilkan peserta dari ujian tertentu.' },
+        { icon: <FileCheck size={22} />, title: 'Periksa Jawaban', description: 'Klik ikon ✅ pada peserta untuk membuka panel penilaian dan melihat jawaban mereka.' },
+        { icon: <CheckCircle size={22} />, title: 'Beri Nilai', description: 'Masukkan skor akhir (0-100%) dan klik "Save Grade". Status peserta akan berubah menjadi "Graded".' },
+        { icon: <Upload size={22} />, title: 'Upload Sertifikat', description: 'Klik ikon 🏆 untuk mengunggah sertifikat PDF. Peserta bisa mengunduhnya dari dashboard mereka.' },
+        { icon: <Send size={22} />, title: 'Kirim Notifikasi', description: 'Klik ikon ✉️ untuk mengirim email berisi hasil ujian dan link ke dashboard peserta.', actionLabel: 'Buka Email Center', actionHref: '/admin/emails' },
+    ];
 
     useEffect(() => {
         fetchParticipants();
@@ -330,7 +343,7 @@ export default function ParticipantsPage() {
 
     return (
         <div className="fade-in">
-            <header style={{ marginBottom: '40px' }}>
+            <header style={{ marginBottom: '24px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <div>
                         <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>Participants & Grading</h1>
@@ -342,6 +355,24 @@ export default function ParticipantsPage() {
                         </button>
                     </div>
                 </div>
+
+                <PageHelp
+                    description="Kelola semua peserta ujian sertifikasi di sini. Anda bisa memberi nilai, mengunggah sertifikat, mengirim email notifikasi, dan mengekspor data peserta ke CSV."
+                    tips={[
+                        { text: 'Gunakan filter untuk menampilkan peserta per ujian' },
+                        { text: 'Klik ✅ untuk memberi nilai, 🏆 untuk upload sertifikat' },
+                        { text: 'Export CSV tersedia setelah memilih filter ujian' },
+                        { text: 'Status peserta otomatis berubah setelah dinilai' },
+                    ]}
+                    onOpenWorkflow={() => setShowWorkflow(true)}
+                />
+
+                <WorkflowModal
+                    title="Cara Mengelola & Menilai Peserta"
+                    steps={workflowSteps}
+                    open={showWorkflow}
+                    onClose={() => setShowWorkflow(false)}
+                />
 
                 <div className="card" style={{ padding: '16px', display: 'flex', gap: '16px', alignItems: 'center', background: 'var(--surface)' }}>
                     <div style={{ flex: 1, display: 'flex', gap: '12px', alignItems: 'center' }}>

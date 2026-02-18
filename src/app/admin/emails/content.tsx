@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Mail, Users, Send, Info } from 'lucide-react';
+import { Mail, Users, Send, Info, UserCheck, FileSignature, Pencil, Eye, SendHorizonal } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import PageHelp from '@/components/admin/PageHelp';
+import WorkflowModal, { WorkflowStep } from '@/components/admin/WorkflowModal';
 
 
 export default function EmailCenterPage() {
@@ -24,6 +26,17 @@ export default function EmailCenterPage() {
 
     // Preview Mode
     const [showPreview, setShowPreview] = useState(false);
+
+    // Workflow State
+    const [showWorkflow, setShowWorkflow] = useState(false);
+
+    const workflowSteps: WorkflowStep[] = [
+        { icon: <UserCheck size={22} />, title: 'Pilih Penerima', description: 'Pilih mode pengiriman: "Single Recipient" untuk satu orang, atau "By Exam" untuk mengirim ke semua peserta ujian tertentu sekaligus.' },
+        { icon: <FileSignature size={22} />, title: 'Pilih Template', description: 'Gunakan template yang tersedia (Exam Results / New Test Invitation) atau tulis pesan sendiri dari awal.' },
+        { icon: <Pencil size={22} />, title: 'Sesuaikan Pesan', description: 'Edit subject dan isi pesan. Gunakan variabel smart seperti {{name}}, {{score}}, {{exam_name}}, dan {{link}} yang otomatis diganti data asli.' },
+        { icon: <Eye size={22} />, title: 'Preview Email', description: 'Klik tab "Preview" untuk melihat tampilan email sebelum dikirim. Pastikan semua variabel sudah tergantikan dengan benar.' },
+        { icon: <SendHorizonal size={22} />, title: 'Kirim Email', description: 'Klik "Send Message Now" untuk mengirim. Untuk bulk email, sistem akan mengirim satu per satu ke setiap peserta.' },
+    ];
 
     useEffect(() => {
         fetchExams();
@@ -271,10 +284,28 @@ Admin Team`
 
     return (
         <div className="fade-in">
-            <header style={{ marginBottom: '40px' }}>
+            <header style={{ marginBottom: '24px' }}>
                 <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>Email Center</h1>
                 <p style={{ color: 'var(--text-muted)' }}>Communicate with your participants.</p>
             </header>
+
+            <PageHelp
+                description="Kirim email ke peserta secara individual atau massal berdasarkan ujian. Gunakan template siap pakai dan variabel smart yang otomatis diganti dengan data peserta."
+                tips={[
+                    { text: 'Gunakan template untuk mempercepat pembuatan email' },
+                    { text: 'Variabel {{name}}, {{score}} otomatis diganti data asli' },
+                    { text: 'Preview email sebelum mengirim untuk memastikan format' },
+                    { text: 'Bulk email dikirim satu per satu ke setiap peserta' },
+                ]}
+                onOpenWorkflow={() => setShowWorkflow(true)}
+            />
+
+            <WorkflowModal
+                title="Cara Mengirim Email ke Peserta"
+                steps={workflowSteps}
+                open={showWorkflow}
+                onClose={() => setShowWorkflow(false)}
+            />
 
             <div className="grid gap-8" style={{ gridTemplateColumns: '1fr 350px' }}>
                 <div className="card">
