@@ -14,7 +14,7 @@ export default function ExamDetailsPage() {
     const supabase = createClient();
     const { id } = useParams();
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<'questions' | 'responses'>('questions');
+    const [activeTab, setActiveTab] = useState<'questions' | 'responses' | 'settings'>('questions');
 
     const [exam, setExam] = useState<any>(null);
     const [questions, setQuestions] = useState<any[]>([]);
@@ -26,6 +26,16 @@ export default function ExamDetailsPage() {
     const [loadingResponses, setLoadingResponses] = useState(false);
     const [gradingScore, setGradingScore] = useState('');
     const [selectedPart, setSelectedPart] = useState<any>(null);
+
+    // Settings Tab State
+    const [settings, setSettings] = useState({
+        passing_score: 70,
+        certificate_bg: '',
+        certificate_title: 'CERTIFICATE OF COMPLETION',
+        materials: [] as { title: string, url: string }[]
+    });
+    const [uploadingCert, setUploadingCert] = useState(false);
+
 
     useEffect(() => {
         if (id) {
@@ -41,6 +51,15 @@ export default function ExamDetailsPage() {
         const { data: examData, error } = await supabase.from('exams').select('*').eq('id', id).single();
         if (examData) {
             setExam(examData);
+            // Initialize settings from DB or defaults
+            const s = examData.settings || {};
+            setSettings({
+                passing_score: s.passing_score || 70,
+                certificate_bg: s.certificate_bg || '',
+                certificate_title: s.certificate_title || 'CERTIFICATE OF COMPLETION',
+                materials: s.materials || []
+            });
+
             const { data: qData } = await supabase.from('questions').select('*').eq('exam_id', id).order('order', { ascending: true });
             if (qData) setQuestions(qData);
         }
@@ -97,7 +116,13 @@ export default function ExamDetailsPage() {
                 title: exam.title,
                 description: exam.description,
                 duration: exam.duration,
-                settings: exam.settings
+                settings: {
+                    ...exam.settings,
+                    passing_score: settings.passing_score,
+                    certificate_bg: settings.certificate_bg,
+                    certificate_title: settings.certificate_title,
+                    materials: settings.materials
+                }
             }).eq('id', id);
 
             // Upsert Questions
@@ -213,37 +238,226 @@ export default function ExamDetailsPage() {
                 </div>
             </header>
 
-            {/* Tabs */}
-            <div style={{ borderBottom: '1px solid var(--border)', marginBottom: '32px' }}>
-                <div style={{ display: 'flex', gap: '32px' }}>
-                    <button
-                        onClick={() => setActiveTab('questions')}
-                        style={{
-                            padding: '12px 0',
-                            borderBottom: activeTab === 'questions' ? '2px solid var(--primary)' : '2px solid transparent',
-                            color: activeTab === 'questions' ? 'var(--primary)' : 'var(--text-muted)',
-                            fontWeight: '600',
-                            background: 'none', border: 'none', cursor: 'pointer'
-                        }}
-                    >
-                        Questions
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('responses')}
-                        style={{
-                            padding: '12px 0',
-                            borderBottom: activeTab === 'responses' ? '2px solid var(--primary)' : '2px solid transparent',
-                            color: activeTab === 'responses' ? 'var(--primary)' : 'var(--text-muted)',
-                            fontWeight: '600',
-                            background: 'none', border: 'none', cursor: 'pointer'
-                        }}
-                    >
-                        Responses
-                    </button>
-                </div>
+            <div style={{ display: 'flex', gap: '32px' }}>
+                <TabButton active={activeTab === 'questions'} onClick={() => setActiveTab('questions')} label="Questions" />
+                <TabButton active={activeTab === 'responses'} onClick={() => setActiveTab('responses')} label="Responses" />
+                <TabButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} label="Settings & Certificate" />
             </div>
 
-            {activeTab === 'questions' ? (
+            {
+                activeTab === 'settings' && (
+                    <div className="grid" style={{ gridTemplateColumns: 'minmax(0, 1fr) 350px', gap: '32px' }}>
+                        <div className="flex-column" style={{ gap: '24px' }}>
+                            {/* Test Details */}
+                            <div className="card">
+                                <h3 style={{ marginBottom: '16px' }}>Test Details</h3>
+                                <div className="flex-column" style={{ gap: '16px' }}>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Test Title</label>
+                                        <input
+                                            type="text"
+                                            value={exam.title}
+                                            onChange={(e) => setExam({ ...exam, title: e.target.value })}
+                                            style={{ width: '100%', padding: '12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Description</label>
+                                        <textarea
+                                            value={exam.description || ''}
+                                            onChange={(e) => setExam({ ...exam, description: e.target.value })}
+                                            style={{ width: '100%', padding: '12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', minHeight: '100px' }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Certificate Designer */}
+                            <div className="card">
+                                <h3 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <CheckCircle size={18} color="var(--primary)" /> Certificate Designer
+                                </h3>
+                                <p style={{ color: 'var(--text-muted)', marginBottom: '20px', fontSize: '0.9rem' }}>
+                                    Customize the certificate issued to participants who pass this exam.
+                                </p>
+
+                                <div style={{ marginBottom: '24px' }}>
+                                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Certificate Title</label>
+                                    <input
+                                        type="text"
+                                        value={settings.certificate_title}
+                                        onChange={(e) => setSettings({ ...settings, certificate_title: e.target.value })}
+                                        style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)' }}
+                                    />
+                                </div>
+
+                                <div style={{ marginBottom: '24px' }}>
+                                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Background Image</label>
+                                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                        <label className="btn btn-secondary" style={{ cursor: 'pointer' }}>
+                                            <Plus size={16} style={{ marginRight: '6px' }} />
+                                            {uploadingCert ? 'Uploading...' : 'Upload Background'}
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                style={{ display: 'none' }}
+                                                onChange={async (e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (!file) return;
+                                                    setUploadingCert(true);
+                                                    try {
+                                                        const ext = file.name.split('.').pop();
+                                                        const fileName = `cert_bg_${Date.now()}.${ext}`;
+                                                        const { error: upErr } = await supabase.storage.from('branding').upload(fileName, file);
+                                                        if (upErr) throw upErr;
+                                                        const { data: { publicUrl } } = supabase.storage.from('branding').getPublicUrl(fileName);
+                                                        setSettings(prev => ({ ...prev, certificate_bg: publicUrl }));
+                                                    } catch (err: any) {
+                                                        alert('Upload failed: ' + err.message);
+                                                    } finally {
+                                                        setUploadingCert(false);
+                                                    }
+                                                }}
+                                            />
+                                        </label>
+                                        {settings.certificate_bg && (
+                                            <button className="btn-ghost" onClick={() => setSettings({ ...settings, certificate_bg: '' })} style={{ color: '#ef4444' }}>
+                                                Remove
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Preview */}
+                                <div style={{
+                                    position: 'relative',
+                                    width: '100%',
+                                    aspectRatio: '1.414 / 1', // A4 Landscape
+                                    border: '1px solid var(--border)',
+                                    borderRadius: '8px',
+                                    overflow: 'hidden',
+                                    background: '#f8fafc',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}>
+                                    {settings.certificate_bg ? (
+                                        <img
+                                            src={settings.certificate_bg}
+                                            alt="Certificate Background"
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        />
+                                    ) : (
+                                        <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+                                            No background image selected.<br />Using default white background.
+                                        </div>
+                                    )}
+
+                                    {/* Overlay Preview */}
+                                    <div style={{
+                                        position: 'absolute', inset: 0,
+                                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                        textAlign: 'center', padding: '20px'
+                                    }}>
+                                        <h1 style={{ fontSize: '2em', fontWeight: 'bold', margin: '0 0 10px', color: '#1e293b' }}>{settings.certificate_title}</h1>
+                                        <p style={{ fontSize: '1.2em', margin: '0 0 5px' }}>This is to certify that</p>
+                                        <h2 style={{ fontSize: '1.8em', fontWeight: 'bold', margin: '5px 0 10px', color: '#0f172a' }}>[Participant Name]</h2>
+                                        <p style={{ fontSize: '1em', margin: 0 }}>Has successfully completed</p>
+                                        <h3 style={{ fontSize: '1.4em', fontWeight: 'bold', margin: '5px 0' }}>{exam.title}</h3>
+                                        <p>Score: 95%</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Learning Materials */}
+                            <div className="card">
+                                <h3 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <ExternalLink size={18} color="var(--primary)" /> Learning Materials
+                                </h3>
+                                <p style={{ color: 'var(--text-muted)', marginBottom: '20px', fontSize: '0.9rem' }}>
+                                    Add study resources for participants. These will appear on their dashboard.
+                                </p>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    {settings.materials.map((mat, idx) => (
+                                        <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                            <input
+                                                type="text"
+                                                placeholder="Title (e.g. Study Guide)"
+                                                value={mat.title}
+                                                onChange={(e) => {
+                                                    const newMats = [...settings.materials];
+                                                    newMats[idx].title = e.target.value;
+                                                    setSettings({ ...settings, materials: newMats });
+                                                }}
+                                                style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid var(--border)' }}
+                                            />
+                                            <input
+                                                type="text"
+                                                placeholder="URL (https://...)"
+                                                value={mat.url}
+                                                onChange={(e) => {
+                                                    const newMats = [...settings.materials];
+                                                    newMats[idx].url = e.target.value;
+                                                    setSettings({ ...settings, materials: newMats });
+                                                }}
+                                                style={{ flex: 2, padding: '8px', borderRadius: '6px', border: '1px solid var(--border)' }}
+                                            />
+                                            <button
+                                                className="btn-ghost"
+                                                onClick={() => {
+                                                    const newMats = settings.materials.filter((_, i) => i !== idx);
+                                                    setSettings({ ...settings, materials: newMats });
+                                                }}
+                                                style={{ color: '#ef4444' }}
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <button
+                                        className="btn btn-secondary"
+                                        onClick={() => setSettings({ ...settings, materials: [...settings.materials, { title: '', url: '' }] })}
+                                        style={{ width: 'fit-content', marginTop: '8px' }}
+                                    >
+                                        <Plus size={16} style={{ marginRight: '6px' }} /> Add Material
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <aside className="flex-column" style={{ gap: '24px' }}>
+                            <div className="card">
+                                <h3 style={{ marginBottom: '20px' }}>Exam Configuration</h3>
+                                <div className="flex-column" style={{ gap: '16px' }}>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Duration (Minutes)</label>
+                                        <input
+                                            type="number"
+                                            value={exam.duration}
+                                            onChange={(e) => setExam({ ...exam, duration: parseInt(e.target.value) })}
+                                            style={{ width: '100%', padding: '8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}
+                                        />
+                                    </div>
+                                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Passing Score (%)</label>
+                                        <input
+                                            type="number"
+                                            value={settings.passing_score}
+                                            onChange={(e) => setSettings({ ...settings, passing_score: parseInt(e.target.value) })}
+                                            style={{ width: '100%', padding: '8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}
+                                        />
+                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                                            Minimum score to receive a certificate.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </aside>
+                    </div>
+                )}
+
+            {activeTab === 'questions' && (
                 <div className="grid" style={{ gridTemplateColumns: '1fr 340px', gap: '32px' }}>
                     <div className="flex-column" style={{ gap: '24px' }}>
                         <section className="card">
@@ -303,7 +517,9 @@ export default function ExamDetailsPage() {
                         </div>
                     </aside>
                 </div>
-            ) : (
+            )}
+
+            {activeTab === 'responses' && (
                 <div className="flex-column" style={{ gap: '24px' }}>
                     <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
@@ -387,3 +603,22 @@ export default function ExamDetailsPage() {
         </div>
     );
 }
+
+function TabButton({ active, onClick, label }: { active: boolean, onClick: () => void, label: string }) {
+    return (
+        <button
+            onClick={onClick}
+            style={{
+                padding: '12px 0',
+                borderBottom: active ? '2px solid var(--primary)' : '2px solid transparent',
+                color: active ? 'var(--primary)' : 'var(--text-muted)',
+                fontWeight: '600',
+                background: 'none', border: 'none', cursor: 'pointer',
+                transition: 'all 0.2s'
+            }}
+        >
+            {label}
+        </button>
+    );
+}
+

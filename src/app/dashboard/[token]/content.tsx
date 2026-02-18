@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Award, Download, FileText, CheckCircle, Clock } from 'lucide-react';
+import { Award, Download, FileText, CheckCircle, Clock, ExternalLink } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { exportCertificatePDF } from '@/lib/pdf';
 
@@ -46,6 +46,8 @@ export default function UserDashboardPage() {
     if (!data) return <div className="flex-center" style={{ height: '100vh' }}>Access Denied.</div>;
 
     const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+    const settings = data.exams.settings || {};
+    const passingScore = settings.passing_score || 70;
 
     return (
         <div className="container" style={{ padding: '60px 20px', maxWidth: '1000px' }}>
@@ -76,7 +78,7 @@ export default function UserDashboardPage() {
                             {data.score !== null ? `${data.score}%` : '--'}
                         </div>
                     </div>
-                    {data.status === 'graded' && data.score >= 70 ? (
+                    {data.status === 'graded' && data.score >= passingScore ? (
                         <div style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
                             <CheckCircle size={20} /> Certified Practitioner
                         </div>
@@ -94,13 +96,13 @@ export default function UserDashboardPage() {
                     <div className="flex-column" style={{ gap: '12px' }}>
                         <DocRow
                             title="Certificate of Completion"
-                            available={!!data.certificate_url || (data.status === 'graded' && data.score >= 70)}
+                            available={!!data.certificate_url || (data.status === 'graded' && data.score >= passingScore)}
                             icon={<Award size={18} />}
                             onDownload={() => {
                                 if (data.certificate_url) {
                                     window.open(data.certificate_url, '_blank');
                                 } else {
-                                    exportCertificatePDF(data, data.exams);
+                                    exportCertificatePDF(data, data.exams, settings);
                                 }
                             }}
                         />
@@ -109,7 +111,36 @@ export default function UserDashboardPage() {
                             available={data.status === 'graded'}
                             icon={<FileText size={18} />}
                         />
-                        <DocRow title="Learning Materials" available={true} icon={<Download size={18} />} />
+
+                        {/* Learning Materials */}
+                        {settings.materials && settings.materials.length > 0 && (
+                            <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
+                                <h4 style={{ fontSize: '0.9rem', marginBottom: '12px', color: 'var(--text-muted)' }}>Study Resources</h4>
+                                <div className="flex-column" style={{ gap: '8px' }}>
+                                    {settings.materials.map((m: any, i: number) => (
+                                        <a
+                                            key={i}
+                                            href={m.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="btn-ghost"
+                                            style={{
+                                                justifyContent: 'flex-start',
+                                                padding: '10px 12px',
+                                                background: 'var(--background)',
+                                                borderRadius: '6px',
+                                                textDecoration: 'none',
+                                                color: 'var(--foreground)',
+                                                border: '1px solid var(--border)'
+                                            }}
+                                        >
+                                            <ExternalLink size={14} style={{ marginRight: '8px', flexShrink: 0 }} />
+                                            <span style={{ fontWeight: '500' }}>{m.title}</span>
+                                        </a>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

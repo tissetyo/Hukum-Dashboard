@@ -57,7 +57,7 @@ export const exportExamToPDF = (exam: any, questions: any[]) => {
     doc.save(`${exam.title.replace(/\s+/g, '_')}_Test.pdf`);
 };
 
-export const exportCertificatePDF = (participant: any, exam: any) => {
+export const exportCertificatePDF = async (participant: any, exam: any, settings?: any) => {
     const doc = new jsPDF({
         orientation: 'landscape'
     });
@@ -65,35 +65,80 @@ export const exportCertificatePDF = (participant: any, exam: any) => {
     const width = doc.internal.pageSize.getWidth();
     const height = doc.internal.pageSize.getHeight();
 
-    // Border
-    doc.setDrawColor(182, 141, 64); // var(--secondary)
-    doc.setLineWidth(5);
-    doc.rect(10, 10, width - 20, height - 20);
+    // Background Loading
+    if (settings?.certificate_bg) {
+        try {
+            const img = new Image();
+            img.src = settings.certificate_bg;
+            img.crossOrigin = "Anonymous";
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+            });
+            doc.addImage(img, 'JPEG', 0, 0, width, height);
+        } catch (e) {
+            console.error("Failed to load certificate bg", e);
+            // Fallback to default border if image fails
+            drawDefaultBorder(doc, width, height);
+        }
+    } else {
+        drawDefaultBorder(doc, width, height);
+    }
 
-    // Content
+    // Colors
+    // If background is used, we might want white text? detailed implementation depends on design. 
+    // For now assume light background or white paper.
+    doc.setTextColor(30, 41, 59); // var(--slate-800)
+
+    // Title
+    const title = settings?.certificate_title || 'CERTIFICATE OF COMPLETION';
     doc.setFontSize(40);
-    doc.text('CERTIFICATE', width / 2, 50, { align: 'center' });
-    doc.setFontSize(20);
-    doc.text('OF COMPLETION', width / 2, 65, { align: 'center' });
+    doc.setFont('helvetica', 'bold');
+    doc.text(title, width / 2, 60, { align: 'center' });
+
+    // Subtitle
+    if (!settings?.certificate_title) {
+        doc.setFontSize(20);
+        doc.text('OF COMPLETION', width / 2, 75, { align: 'center' });
+    }
 
     doc.setFontSize(16);
-    doc.text('This is to certify that', width / 2, 90, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.text('This is to certify that', width / 2, 95, { align: 'center' });
 
+    // Participant Name
     doc.setFontSize(32);
     doc.setFont('helvetica', 'bold');
-    doc.text(participant.full_name, width / 2, 110, { align: 'center' });
+    doc.setTextColor(15, 23, 42); // var(--slate-900)
+    doc.text(participant.full_name, width / 2, 115, { align: 'center' });
 
+    // Completion Text
     doc.setFontSize(16);
     doc.setFont('helvetica', 'normal');
-    doc.text('has successfully completed the legal certification test:', width / 2, 130, { align: 'center' });
+    doc.setTextColor(30, 41, 59);
+    doc.text('has successfully completed the exam:', width / 2, 135, { align: 'center' });
 
-    doc.setFontSize(22);
+    // Exam Title
+    doc.setFontSize(24);
     doc.setFont('helvetica', 'bold');
-    doc.text(exam.title, width / 2, 150, { align: 'center' });
+    doc.text(exam.title, width / 2, 155, { align: 'center' });
 
+    // Score
     doc.setFontSize(14);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Score: ${participant.score}%`, width / 2, 165, { align: 'center' });
+    doc.setTextColor(71, 85, 105); // var(--slate-600)
+    doc.text(`Score: ${participant.score}%`, width / 2, 175, { align: 'center' });
+
+    // Date (Optional)
+    const date = new Date().toLocaleDateString();
+    doc.setFontSize(10);
+    doc.text(`Issued on: ${date}`, width / 2, 185, { align: 'center' });
 
     doc.save(`Certificate_${participant.full_name.replace(/\s+/g, '_')}.pdf`);
 };
+
+function drawDefaultBorder(doc: jsPDF, width: number, height: number) {
+    doc.setDrawColor(182, 141, 64); // var(--secondary)
+    doc.setLineWidth(5);
+    doc.rect(10, 10, width - 20, height - 20);
+}
