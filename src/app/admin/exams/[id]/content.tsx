@@ -336,35 +336,104 @@ export default function ExamDetailsPage() {
                                     border: '1px solid var(--border)',
                                     borderRadius: '8px',
                                     overflow: 'hidden',
-                                    background: '#f8fafc',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
+                                    background: '#fff',
                                 }}>
-                                    {settings.certificate_bg ? (
+                                    {settings.certificate_bg && (
                                         <img
                                             src={settings.certificate_bg}
                                             alt="Certificate Background"
-                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                            style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover' }}
                                         />
-                                    ) : (
-                                        <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-                                            No background image selected.<br />Using default white background.
-                                        </div>
                                     )}
 
-                                    {/* Overlay Preview */}
+                                    {/* Default decorative elements (shown when no custom bg) */}
+                                    {!settings.certificate_bg && (
+                                        <>
+                                            {/* Top teal bar */}
+                                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: '#009688' }} />
+                                            {/* Bottom accent zone */}
+                                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '14%', background: '#f0f8ff' }} />
+                                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px', background: '#009688' }} />
+                                            {/* Gold border frame */}
+                                            <div style={{ position: 'absolute', inset: '3%', border: '1px solid #b68d40', pointerEvents: 'none' }} />
+                                            {/* Inner subtle frame */}
+                                            <div style={{ position: 'absolute', inset: '4%', border: '0.5px solid #ddd', pointerEvents: 'none' }} />
+                                        </>
+                                    )}
+
+                                    {/* Overlay Preview Content */}
                                     <div style={{
                                         position: 'absolute', inset: 0,
-                                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                                        textAlign: 'center', padding: '20px'
+                                        display: 'flex', flexDirection: 'column', alignItems: 'center',
+                                        justifyContent: 'center',
+                                        textAlign: 'center', padding: '8%',
+                                        zIndex: 1
                                     }}>
-                                        <h1 style={{ fontSize: '2em', fontWeight: 'bold', margin: '0 0 10px', color: '#1e293b' }}>{settings.certificate_title}</h1>
-                                        <p style={{ fontSize: '1.2em', margin: '0 0 5px' }}>This is to certify that</p>
-                                        <h2 style={{ fontSize: '1.8em', fontWeight: 'bold', margin: '5px 0 10px', color: '#0f172a' }}>[Participant Name]</h2>
-                                        <p style={{ fontSize: '1em', margin: 0 }}>Has successfully completed</p>
-                                        <h3 style={{ fontSize: '1.4em', fontWeight: 'bold', margin: '5px 0' }}>{exam.title}</h3>
-                                        <p>Score: 95%</p>
+                                        {/* Organization Name */}
+                                        <div style={{ fontSize: '0.7em', fontWeight: 700, color: '#009688', letterSpacing: '2px', marginBottom: '4px' }}>
+                                            HUKUM CERTIFICATION
+                                        </div>
+
+                                        {/* Certificate Badge */}
+                                        <div style={{
+                                            background: '#009688', color: '#fff', padding: '3px 14px',
+                                            borderRadius: '3px', fontSize: '0.5em', fontWeight: 700,
+                                            letterSpacing: '1px', marginBottom: '10px'
+                                        }}>
+                                            {settings.certificate_title || 'CERTIFICATE OF COMPLETION'}
+                                        </div>
+
+                                        {/* Name with decorative lines */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '6px 0' }}>
+                                            <div style={{ width: '40px', height: '1px', background: '#b68d40' }} />
+                                            <span style={{ fontSize: '1.4em', fontWeight: 700, color: '#0f1e3e' }}>
+                                                [Participant Name]
+                                            </span>
+                                            <div style={{ width: '40px', height: '1px', background: '#b68d40' }} />
+                                        </div>
+
+                                        <div style={{ fontSize: '0.6em', color: '#1e293b', lineHeight: 1.6, marginBottom: '10px' }}>
+                                            has successfully completed the certification exam<br />
+                                            and has earned the following result:
+                                        </div>
+
+                                        {/* Geometric Score Badge */}
+                                        <div style={{
+                                            position: 'relative', width: '64px', height: '64px',
+                                            margin: '4px 0 8px'
+                                        }}>
+                                            {/* Rotating squares */}
+                                            {[0, 15, 30].map((angle, i) => (
+                                                <div key={i} style={{
+                                                    position: 'absolute', inset: `${i * 4}px`,
+                                                    border: '1px solid rgba(0,150,136,0.3)',
+                                                    transform: `rotate(${angle}deg)`,
+                                                }} />
+                                            ))}
+                                            {/* Center circle */}
+                                            <div style={{
+                                                position: 'absolute', top: '50%', left: '50%',
+                                                transform: 'translate(-50%, -50%)',
+                                                width: '40px', height: '40px', borderRadius: '50%',
+                                                background: '#009688',
+                                                display: 'flex', flexDirection: 'column',
+                                                alignItems: 'center', justifyContent: 'center'
+                                            }}>
+                                                <span style={{ color: '#fff', fontSize: '0.9em', fontWeight: 800, lineHeight: 1 }}>95%</span>
+                                                <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.35em', letterSpacing: '1px' }}>SCORE</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Exam Title */}
+                                        <div style={{ fontSize: '0.8em', fontWeight: 700, color: '#0f1e3e', marginBottom: '6px' }}>
+                                            {exam.title}
+                                        </div>
+
+                                        {/* Date */}
+                                        <div style={{ fontSize: '0.45em', color: '#475569', fontWeight: 700 }}>Awarded on:</div>
+                                        <div style={{ fontSize: '0.6em', color: '#0f1e3e', fontWeight: 600 }}>
+                                            {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
