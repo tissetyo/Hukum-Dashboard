@@ -36,99 +36,97 @@ export default function WorkflowModal({ title, steps, open, onClose }: WorkflowM
         <div style={{
             position: 'fixed',
             top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
+            background: 'rgba(15,23,42,0.6)',
+            backdropFilter: 'blur(4px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 200,
-            animation: 'fadeIn 0.2s ease',
+            animation: 'wfFadeIn 0.2s ease',
         }}>
             <div style={{
-                width: '520px',
-                maxWidth: '90vw',
+                width: '480px',
+                maxWidth: '92vw',
                 background: 'white',
-                borderRadius: '16px',
-                boxShadow: '0 24px 48px rgba(0,0,0,0.15)',
+                borderRadius: '14px',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
                 overflow: 'hidden',
-                animation: 'slideUp 0.3s ease',
+                animation: 'wfSlideUp 0.25s ease',
             }}>
                 {/* Header */}
                 <div style={{
-                    padding: '20px 24px',
-                    background: 'linear-gradient(135deg, var(--primary), var(--primary-light, #e05060))',
-                    color: 'white',
+                    padding: '18px 20px',
+                    borderBottom: '1px solid var(--border)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
                 }}>
                     <div>
-                        <div style={{ fontSize: '0.8rem', opacity: 0.8, marginBottom: '4px' }}>Panduan Langkah</div>
-                        <h3 style={{ margin: 0, fontSize: '1.15rem' }}>{title}</h3>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>Panduan</div>
+                        <h3 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text)' }}>{title}</h3>
                     </div>
                     <button
                         onClick={handleClose}
                         style={{
-                            background: 'rgba(255,255,255,0.2)',
-                            border: 'none',
+                            background: 'var(--surface, #f8fafc)',
+                            border: '1px solid var(--border)',
                             borderRadius: '8px',
                             padding: '6px',
                             cursor: 'pointer',
-                            color: 'white',
+                            color: 'var(--text-muted)',
                             display: 'flex',
                         }}
                     >
-                        <X size={18} />
+                        <X size={16} />
                     </button>
                 </div>
 
-                {/* Progress Bar */}
-                <div style={{ padding: '0 24px', paddingTop: '20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
-                        {steps.map((_, i) => (
-                            <div key={i} style={{
-                                flex: 1,
-                                height: '4px',
-                                borderRadius: '2px',
-                                background: i <= currentStep ? 'var(--primary)' : '#e2e8f0',
-                                transition: 'background 0.3s ease',
-                            }} />
-                        ))}
-                    </div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '20px' }}>
-                        Langkah {currentStep + 1} dari {steps.length}
-                    </div>
+                {/* Progress Dots */}
+                <div style={{ padding: '16px 20px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {steps.map((_, i) => (
+                        <button key={i} onClick={() => setCurrentStep(i)} style={{
+                            width: i === currentStep ? '24px' : '8px',
+                            height: '8px',
+                            borderRadius: '4px',
+                            background: i <= currentStep ? 'var(--primary)' : '#e2e8f0',
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease',
+                            padding: 0,
+                        }} />
+                    ))}
+                    <span style={{ marginLeft: 'auto', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                        {currentStep + 1}/{steps.length}
+                    </span>
                 </div>
 
                 {/* Step Content */}
-                <div style={{ padding: '0 24px 24px' }}>
+                <div style={{ padding: '16px 20px 20px' }}>
                     <div style={{
                         display: 'flex',
-                        gap: '16px',
+                        gap: '14px',
                         alignItems: 'flex-start',
-                        padding: '20px',
-                        background: '#f8fafc',
-                        borderRadius: '12px',
-                        border: '1px solid #e2e8f0',
-                        minHeight: '120px',
+                        padding: '16px',
+                        background: 'var(--surface, #f8fafc)',
+                        borderRadius: '10px',
+                        border: '1px solid var(--border)',
                     }}>
                         <div style={{
-                            width: '48px',
-                            height: '48px',
-                            borderRadius: '12px',
-                            background: 'linear-gradient(135deg, var(--primary), var(--primary-light, #e05060))',
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '10px',
+                            background: 'var(--primary)',
                             color: 'white',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             flexShrink: 0,
-                            fontSize: '1.2rem',
-                            fontWeight: '700',
                         }}>
                             {step.icon}
                         </div>
                         <div style={{ flex: 1 }}>
-                            <h4 style={{ margin: '0 0 8px', fontSize: '1rem', color: '#0f172a' }}>{step.title}</h4>
-                            <p style={{ margin: 0, fontSize: '0.88rem', color: '#475569', lineHeight: '1.6' }}>
+                            <h4 style={{ margin: '0 0 6px', fontSize: '0.92rem', color: 'var(--text)' }}>{step.title}</h4>
+                            <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>
                                 {step.description}
                             </p>
                             {step.actionLabel && step.actionHref && (
@@ -137,16 +135,16 @@ export default function WorkflowModal({ title, steps, open, onClose }: WorkflowM
                                     style={{
                                         display: 'inline-flex',
                                         alignItems: 'center',
-                                        gap: '6px',
-                                        marginTop: '12px',
-                                        padding: '6px 14px',
+                                        gap: '4px',
+                                        marginTop: '10px',
+                                        padding: '5px 12px',
                                         borderRadius: '6px',
-                                        background: '#f0f9ff',
-                                        color: '#2563eb',
-                                        fontSize: '0.82rem',
+                                        background: 'white',
+                                        color: 'var(--primary)',
+                                        fontSize: '0.78rem',
                                         fontWeight: '600',
                                         textDecoration: 'none',
-                                        border: '1px solid #bfdbfe',
+                                        border: '1px solid var(--border)',
                                     }}
                                 >
                                     {step.actionLabel} →
@@ -156,10 +154,10 @@ export default function WorkflowModal({ title, steps, open, onClose }: WorkflowM
                     </div>
                 </div>
 
-                {/* Footer Navigation */}
+                {/* Footer */}
                 <div style={{
-                    padding: '16px 24px',
-                    borderTop: '1px solid #e2e8f0',
+                    padding: '14px 20px',
+                    borderTop: '1px solid var(--border)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
@@ -170,18 +168,18 @@ export default function WorkflowModal({ title, steps, open, onClose }: WorkflowM
                         style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '6px',
-                            padding: '10px 18px',
+                            gap: '4px',
+                            padding: '8px 14px',
                             borderRadius: '8px',
                             border: '1px solid var(--border)',
                             background: 'white',
-                            color: isFirst ? '#cbd5e1' : '#475569',
+                            color: isFirst ? '#cbd5e1' : 'var(--text-muted)',
                             cursor: isFirst ? 'default' : 'pointer',
-                            fontSize: '0.88rem',
+                            fontSize: '0.82rem',
                             fontWeight: '500',
                         }}
                     >
-                        <ChevronLeft size={16} /> Sebelumnya
+                        <ChevronLeft size={14} /> Sebelumnya
                     </button>
 
                     {isLast ? (
@@ -190,18 +188,18 @@ export default function WorkflowModal({ title, steps, open, onClose }: WorkflowM
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '6px',
-                                padding: '10px 20px',
+                                gap: '5px',
+                                padding: '8px 16px',
                                 borderRadius: '8px',
                                 border: 'none',
                                 background: '#10b981',
                                 color: 'white',
                                 cursor: 'pointer',
-                                fontSize: '0.88rem',
+                                fontSize: '0.82rem',
                                 fontWeight: '600',
                             }}
                         >
-                            <CheckCircle2 size={16} /> Selesai, Mengerti!
+                            <CheckCircle2 size={14} /> Mengerti!
                         </button>
                     ) : (
                         <button
@@ -209,31 +207,31 @@ export default function WorkflowModal({ title, steps, open, onClose }: WorkflowM
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '6px',
-                                padding: '10px 20px',
+                                gap: '5px',
+                                padding: '8px 16px',
                                 borderRadius: '8px',
                                 border: 'none',
                                 background: 'var(--primary)',
                                 color: 'white',
                                 cursor: 'pointer',
-                                fontSize: '0.88rem',
+                                fontSize: '0.82rem',
                                 fontWeight: '600',
                             }}
                         >
-                            Selanjutnya <ChevronRight size={16} />
+                            Selanjutnya <ChevronRight size={14} />
                         </button>
                     )}
                 </div>
             </div>
 
             <style>{`
-                @keyframes fadeIn {
+                @keyframes wfFadeIn {
                     from { opacity: 0; }
                     to { opacity: 1; }
                 }
-                @keyframes slideUp {
-                    from { opacity: 0; transform: translateY(20px); }
-                    to { opacity: 1; transform: translateY(0); }
+                @keyframes wfSlideUp {
+                    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
                 }
             `}</style>
         </div>

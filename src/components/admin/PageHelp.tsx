@@ -15,14 +15,14 @@ interface PageHelpProps {
 }
 
 export default function PageHelp({ description, tips, onOpenWorkflow }: PageHelpProps) {
-    const [open, setOpen] = useState(true);
+    const [open, setOpen] = useState(false);
 
     return (
         <div style={{
-            marginBottom: '24px',
-            borderRadius: 'var(--radius)',
-            border: '1px solid #dbeafe',
-            background: 'linear-gradient(135deg, #eff6ff, #f0f9ff)',
+            marginBottom: '20px',
+            borderRadius: '10px',
+            border: '1px solid var(--border)',
+            background: 'var(--card-bg, white)',
             overflow: 'hidden',
             transition: 'all 0.3s ease',
         }}>
@@ -34,99 +34,101 @@ export default function PageHelp({ description, tips, onOpenWorkflow }: PageHelp
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '14px 20px',
+                    padding: '12px 16px',
                     background: 'none',
                     border: 'none',
                     cursor: 'pointer',
-                    color: '#1e40af',
-                    fontWeight: '600',
-                    fontSize: '0.9rem',
+                    color: 'var(--text-muted)',
+                    fontSize: '0.82rem',
+                    fontWeight: '500',
+                    transition: 'color 0.2s',
                 }}
+                onMouseOver={(e) => { e.currentTarget.style.color = 'var(--text)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; }}
             >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <HelpCircle size={18} />
-                    <span>Bantuan & Tips</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <HelpCircle size={15} />
+                    <span>Butuh bantuan? Klik untuk tips & panduan</span>
                 </div>
-                {open ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
             </button>
 
             {/* Collapsible Content */}
-            {open && (
-                <div style={{ padding: '0 20px 18px' }}>
+            <div style={{
+                maxHeight: open ? '400px' : '0',
+                opacity: open ? 1 : 0,
+                overflow: 'hidden',
+                transition: 'max-height 0.35s ease, opacity 0.25s ease',
+            }}>
+                <div style={{ padding: '0 16px 14px', borderTop: '1px solid var(--border)' }}>
                     {/* Description */}
-                    <p style={{ color: '#1e3a5f', fontSize: '0.9rem', lineHeight: '1.6', margin: '0 0 16px' }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', lineHeight: '1.5', margin: '12px 0 10px' }}>
                         {description}
                     </p>
 
-                    {/* Tips */}
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                        gap: '8px',
-                        marginBottom: '16px'
-                    }}>
+                    {/* Tips as inline pills */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
                         {tips.map((tip, i) => (
-                            <div key={i} style={{
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                gap: '8px',
-                                padding: '8px 12px',
-                                background: 'rgba(255,255,255,0.7)',
-                                borderRadius: '8px',
-                                fontSize: '0.82rem',
-                                color: '#334155',
+                            <span key={i} style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                padding: '4px 10px',
+                                background: '#fef9c3',
+                                borderRadius: '999px',
+                                fontSize: '0.75rem',
+                                color: '#854d0e',
+                                fontWeight: '500',
                             }}>
-                                <Lightbulb size={14} style={{ color: '#f59e0b', flexShrink: 0, marginTop: '2px' }} />
-                                <span>{tip.text}</span>
-                            </div>
+                                <Lightbulb size={11} />
+                                {tip.text}
+                            </span>
                         ))}
                     </div>
 
                     {/* Action Buttons */}
-                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: '8px' }}>
                         <button
                             onClick={onOpenWorkflow}
                             style={{
-                                display: 'flex',
+                                display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '6px',
-                                padding: '8px 16px',
-                                borderRadius: '8px',
-                                border: '1px solid #3b82f6',
-                                background: '#3b82f6',
+                                gap: '5px',
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                border: '1px solid var(--primary)',
+                                background: 'var(--primary)',
                                 color: 'white',
-                                fontSize: '0.82rem',
+                                fontSize: '0.78rem',
                                 fontWeight: '600',
                                 cursor: 'pointer',
-                                transition: 'all 0.2s',
                             }}
                         >
-                            <Navigation size={14} />
+                            <Navigation size={12} />
                             Panduan Langkah
                         </button>
                         <Link
                             href="/admin/docs"
                             style={{
-                                display: 'flex',
+                                display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '6px',
-                                padding: '8px 16px',
-                                borderRadius: '8px',
-                                border: '1px solid #93c5fd',
+                                gap: '5px',
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                border: '1px solid var(--border)',
                                 background: 'white',
-                                color: '#2563eb',
-                                fontSize: '0.82rem',
-                                fontWeight: '600',
+                                color: 'var(--text-muted)',
+                                fontSize: '0.78rem',
+                                fontWeight: '500',
                                 textDecoration: 'none',
-                                transition: 'all 0.2s',
                             }}
                         >
-                            <BookOpen size={14} />
-                            Lihat Dokumentasi
+                            <BookOpen size={12} />
+                            Dokumentasi
                         </Link>
                     </div>
                 </div>
-            )}
+            </div>
         </div>
     );
 }

@@ -232,36 +232,45 @@ export default function ParticipantsPage() {
                 return;
             }
 
+            const examTitle = p.exams?.title || 'Exam';
             const doc = new jsPDF();
+
+            // Header — Centered title
             doc.setFontSize(18);
-            doc.text('Result Submission', 14, 20);
+            doc.text(examTitle, 105, 20, { align: 'center' });
 
-            doc.setFontSize(11);
-            doc.text(`Participant: ${p.full_name}`, 14, 30);
-            doc.text(`Email: ${p.email}`, 14, 36);
-            doc.text(`Exam: ${p.exams?.title || 'Unknown Exam'}`, 14, 42);
-            doc.text(`Score: ${p.score !== null ? p.score + '%' : 'Not Graded'}`, 14, 48);
-            doc.text(`Date: ${submissionData?.submitted_at ? new Date(submissionData.submitted_at).toLocaleString() : 'Not Submitted'}`, 14, 54);
+            // Participant info block
+            doc.setFontSize(12);
+            doc.text(`Name: ${p.full_name}`, 14, 35);
+            doc.text(`Email: ${p.email}`, 14, 42);
+            doc.text(`Score: ${p.score !== null ? p.score + '%' : 'Not Graded'}`, 14, 49);
+            doc.text(`Date: ${submissionData?.submitted_at ? new Date(submissionData.submitted_at).toLocaleDateString() : 'Not Submitted'}`, 150, 35);
 
-            const tableBody = questions.map((q: any, index: number) => {
-                const userAnswer = answers[q.id] || '(No Answer)';
-                const questionText = q.content;
-                return [`${index + 1}`, questionText, userAnswer];
+            doc.line(14, 55, 196, 55);
+
+            // Q&A per question (exam-paper style)
+            let yPos = 65;
+
+            (questions || []).forEach((q: any, idx: number) => {
+                if (yPos > 250) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.text(`Q${idx + 1}: ${q.content}`, 14, yPos);
+
+                yPos += 8;
+                doc.setFont('helvetica', 'normal');
+
+                const answer = answers[q.id] || '(No Answer)';
+                const splitAnswer = doc.splitTextToSize(answer, 180);
+                doc.text(splitAnswer, 14, yPos);
+                yPos += (splitAnswer.length * 5) + 10;
             });
 
-            autoTable(doc, {
-                startY: 60,
-                head: [['#', 'Question', 'Participant Answer']],
-                body: tableBody,
-                columnStyles: {
-                    0: { cellWidth: 10 },
-                    1: { cellWidth: 90 },
-                    2: { cellWidth: 90 }
-                },
-                styles: { overflow: 'linebreak' }
-            });
-
-            doc.save(`${p.full_name}_${p.exams?.title}_Submission.pdf`);
+            doc.save(`${p.full_name}_${examTitle}_Submission.pdf`);
 
         } catch (err) {
             console.error('Download failed:', err);
