@@ -66,12 +66,12 @@ export const exportCertificatePDF = async (participant: any, exam: any, settings
     const h = doc.internal.pageSize.getHeight();   // 210
     const cx = w / 2;
 
-    // ── Colors ──
-    const navy = [15, 30, 62] as const;       // deep navy
-    const teal = [0, 150, 136] as const;       // teal accent
-    const gold = [182, 141, 64] as const;      // gold accent
-    const slate = [71, 85, 105] as const;       // muted text
-    const darkText = [30, 41, 59] as const;        // body text
+    // ── Brand Colors ──
+    const maroon = [138, 21, 27] as const;       // #8A151B — primary brand
+    const navy = [27, 43, 75] as const;        // #1B2B4B — dark sections
+    const gold = [192, 130, 63] as const;      // #C0823F — gold accent
+    const slate = [100, 116, 139] as const;     // muted text
+    const darkText = [15, 23, 42] as const;        // body text
 
     // ── Background ──
     let hasCustomBg = false;
@@ -96,112 +96,140 @@ export const exportCertificatePDF = async (participant: any, exam: any, settings
         doc.setFillColor(255, 255, 255);
         doc.rect(0, 0, w, h, 'F');
 
-        // Subtle top gradient bar (teal → transparent look)
-        doc.setFillColor(240, 253, 250);
+        // Top maroon accent bar
+        doc.setFillColor(245, 240, 235);  // warm off-white like brand bg
         doc.rect(0, 0, w, 6, 'F');
-        doc.setFillColor(0, 150, 136);
-        doc.rect(0, 0, w, 2, 'F');
+        doc.setFillColor(...maroon);
+        doc.rect(0, 0, w, 2.5, 'F');
 
-        // Bottom accent bar
-        doc.setFillColor(240, 248, 255);
-        doc.rect(0, h - 30, w, 30, 'F');
-        doc.setFillColor(0, 150, 136);
-        doc.rect(0, h - 2, w, 2, 'F');
+        // Bottom navy strip
+        doc.setFillColor(...navy);
+        doc.rect(0, h - 18, w, 18, 'F');
 
-        // Outer frame — thin elegant border
+        // Outer frame — gold border
         doc.setDrawColor(...gold);
-        doc.setLineWidth(0.8);
+        doc.setLineWidth(1.0);
         doc.rect(8, 8, w - 16, h - 16);
 
-        // Inner frame — dotted style
-        doc.setDrawColor(220, 220, 220);
+        // Inner frame — subtle light
+        doc.setDrawColor(230, 220, 205);
         doc.setLineWidth(0.3);
         doc.rect(12, 12, w - 24, h - 24);
 
-        // Corner ornaments (small L-shapes in gold)
+        // Corner ornaments in gold
         drawCornerOrnaments(doc, w, h, gold);
     }
 
-    // ── Organization / Logo Text ──
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.setTextColor(...teal);
-    doc.text('HUKUM CERTIFICATION', cx, 28, { align: 'center' });
+    // ── Logo ──
+    try {
+        const logoImg = new Image();
+        logoImg.src = '/logo.png';
+        logoImg.crossOrigin = "Anonymous";
+        await new Promise((resolve, reject) => {
+            logoImg.onload = resolve;
+            logoImg.onerror = reject;
+        });
+        const logoW = 28;
+        const logoH = 20;
+        doc.addImage(logoImg, 'PNG', cx - logoW / 2, 16, logoW, logoH);
+    } catch (e) {
+        // Fallback: text-only header
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(...maroon);
+        doc.text('LSP OFFICIUM NOBILE INDOLAW', cx, 26, { align: 'center' });
+    }
 
-    // ── Certificate Badge ──
-    const badgeY = 36;
+    // ── Organization Name ──
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...navy);
+    doc.text('LSP OFFICIUM NOBILE INDOLAW', cx, 40, { align: 'center' });
+    doc.setFontSize(6.5);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(...slate);
+    doc.text('Kompetensi Advokat Indonesia', cx, 45, { align: 'center' });
+
+    // ── Maroon divider ──
+    doc.setDrawColor(...maroon);
+    doc.setLineWidth(0.6);
+    doc.line(cx - 50, 49, cx + 50, 49);
+
+    // ── Certificate Title Badge ──
+    const badgeY = 56;
     const title = settings?.certificate_title || 'CERTIFICATE OF COMPLETION';
-    const badgeW = doc.getTextWidth(title) + 16;
-    doc.setFillColor(...teal);
-    roundedRect(doc, cx - badgeW / 2, badgeY - 5, badgeW, 11, 2);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
+    const badgeW = doc.getTextWidth(title) + 20;
+    doc.setFillColor(...maroon);
+    roundedRect(doc, cx - badgeW / 2, badgeY - 5, badgeW, 11, 2);
     doc.setTextColor(255, 255, 255);
     doc.text(title, cx, badgeY + 2, { align: 'center' });
 
-    // ── Decorative line + Participant Name ──
-    const nameY = 62;
-    doc.setDrawColor(...gold);
-    doc.setLineWidth(0.5);
-    const nameWidth = doc.getTextWidth(participant.full_name);
-    // Estimate name width at size 28
-    doc.setFontSize(28);
+    // ── "This is to certify that" ──
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(...slate);
+    doc.text('This is to certify that', cx, 72, { align: 'center' });
+
+    // ── Decorative lines + Participant Name ──
+    const nameY = 84;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(26);
     const estimatedNameW = doc.getTextWidth(participant.full_name);
     const lineGap = 8;
-    const lineLen = 40;
+    const lineLen = 35;
+    doc.setDrawColor(...gold);
+    doc.setLineWidth(0.5);
     doc.line(cx - estimatedNameW / 2 - lineGap - lineLen, nameY - 3, cx - estimatedNameW / 2 - lineGap, nameY - 3);
     doc.line(cx + estimatedNameW / 2 + lineGap, nameY - 3, cx + estimatedNameW / 2 + lineGap + lineLen, nameY - 3);
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(28);
     doc.setTextColor(...navy);
     doc.text(participant.full_name, cx, nameY, { align: 'center' });
 
-    // ── Subtitle text ──
+    // ── Subtitle ──
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(11);
+    doc.setFontSize(10);
     doc.setTextColor(...darkText);
-    doc.text('has successfully completed the certification exam', cx, 74, { align: 'center' });
-    doc.text('and has earned the following result:', cx, 81, { align: 'center' });
+    doc.text('has successfully completed the certification examination', cx, 94, { align: 'center' });
+    doc.text('and has earned the following result:', cx, 100, { align: 'center' });
 
-    // ── Geometric Score Badge ──
-    const badgeCenterY = 118;
-    drawScoreBadge(doc, cx, badgeCenterY, participant.score, teal, gold);
+    // ── Score Badge ──
+    const badgeCY = 128;
+    drawScoreBadge(doc, cx, badgeCY, participant.score, maroon, gold);
 
     // ── Exam Title ──
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
+    doc.setFontSize(14);
     doc.setTextColor(...navy);
-    doc.text(exam.title, cx, 160, { align: 'center' });
+    doc.text(exam.title, cx, 158, { align: 'center' });
 
-    // ── Awarded On ──
+    // ── Award Date ──
     const date = participant.end_time
         ? new Date(participant.end_time).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
         : new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(...slate);
-    doc.text('Awarded on:', cx, 172, { align: 'center' });
-    doc.setFontSize(12);
-    doc.setTextColor(...navy);
-    doc.text(date, cx, 179, { align: 'center' });
-
-    // ── Footer ──
-    doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
-    doc.setTextColor(160, 170, 180);
-    doc.text('This certificate verifies the successful completion of the examination.', cx, h - 14, { align: 'center' });
-    doc.text('Verify at: hukum-dashboard.vercel.app', cx, h - 9, { align: 'center' });
+    doc.setTextColor(...slate);
+    doc.text('Awarded on:', cx, 168, { align: 'center' });
+    doc.setFontSize(11);
+    doc.setTextColor(...navy);
+    doc.text(date, cx, 174, { align: 'center' });
+
+    // ── Footer (in navy bar) ──
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(200, 200, 210);
+    doc.text('This certificate verifies the successful completion of the examination.', cx, h - 10, { align: 'center' });
+    doc.text('LSP Officium Nobile Indolaw — hukum-dashboard.vercel.app', cx, h - 5.5, { align: 'center' });
 
     doc.save(`Certificate_${participant.full_name.replace(/\s+/g, '_')}.pdf`);
 };
 
-// ── Helper: Draw geometric score badge (diamond with rotating squares) ──
-function drawScoreBadge(doc: jsPDF, cx: number, cy: number, score: number, teal: readonly number[], gold: readonly number[]) {
-    // Outer rotating squares (decorative, like EF SET)
-    const sizes = [38, 32, 26];
+// ── Helper: Score badge with rotating squares (brand maroon) ──
+function drawScoreBadge(doc: jsPDF, cx: number, cy: number, score: number, brand: readonly number[], gold: readonly number[]) {
+    const sizes = [36, 30, 24];
     const angles = [0, 15, 30];
-    const alphas = [0.08, 0.12, 0.18];
 
     sizes.forEach((size, i) => {
         const angle = (angles[i] * Math.PI) / 180;
@@ -216,9 +244,8 @@ function drawScoreBadge(doc: jsPDF, cx: number, cy: number, score: number, teal:
             { x: cx + (-half) * cos - (-half) * sin, y: cy + (-half) * sin + (-half) * cos },
         ];
 
-        doc.setDrawColor(teal[0], teal[1], teal[2]);
+        doc.setDrawColor(brand[0], brand[1], brand[2]);
         doc.setLineWidth(0.4);
-        // Use simple line drawing for the rotated square
         doc.line(points[0].x, points[0].y, points[1].x, points[1].y);
         doc.line(points[1].x, points[1].y, points[2].x, points[2].y);
         doc.line(points[2].x, points[2].y, points[3].x, points[3].y);
@@ -226,19 +253,18 @@ function drawScoreBadge(doc: jsPDF, cx: number, cy: number, score: number, teal:
     });
 
     // Central filled circle
-    doc.setFillColor(teal[0], teal[1], teal[2]);
-    doc.circle(cx, cy, 18, 'F');
+    doc.setFillColor(brand[0], brand[1], brand[2]);
+    doc.circle(cx, cy, 16, 'F');
 
-    // Score text inside circle
+    // Score text
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(22);
+    doc.setFontSize(20);
     doc.setTextColor(255, 255, 255);
     doc.text(`${score}%`, cx, cy + 2, { align: 'center' });
 
-    // Label below score
-    doc.setFontSize(7);
+    doc.setFontSize(6);
     doc.setTextColor(255, 255, 255);
-    doc.text('SCORE', cx, cy + 9, { align: 'center' });
+    doc.text('SCORE', cx, cy + 8, { align: 'center' });
 }
 
 // ── Helper: Corner ornaments ──
@@ -248,16 +274,12 @@ function drawCornerOrnaments(doc: jsPDF, w: number, h: number, color: readonly n
     const inset = 14;
     const len = 12;
 
-    // Top-left
     doc.line(inset, inset, inset + len, inset);
     doc.line(inset, inset, inset, inset + len);
-    // Top-right
     doc.line(w - inset, inset, w - inset - len, inset);
     doc.line(w - inset, inset, w - inset, inset + len);
-    // Bottom-left
     doc.line(inset, h - inset, inset + len, h - inset);
     doc.line(inset, h - inset, inset, h - inset - len);
-    // Bottom-right
     doc.line(w - inset, h - inset, w - inset - len, h - inset);
     doc.line(w - inset, h - inset, w - inset, h - inset - len);
 }
@@ -266,3 +288,4 @@ function drawCornerOrnaments(doc: jsPDF, w: number, h: number, color: readonly n
 function roundedRect(doc: jsPDF, x: number, y: number, w: number, h: number, r: number) {
     doc.roundedRect(x, y, w, h, r, r, 'F');
 }
+
